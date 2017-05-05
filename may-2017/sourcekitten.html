@@ -1,0 +1,273 @@
+<!doctype html>
+<html>
+  <head>
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Use title if it's in the page YAML frontmatter -->
+    <title>SourceKitten</title>
+
+    <link href='//fonts.googleapis.com/css?family=Inconsolata|Open+Sans:400,600' rel='stylesheet' type='text/css'>
+
+    <!--[if lte IE 8]><script src="javascript/ie/html5shiv.js"></script><![endif]-->
+    <link href="/stylesheets/site.css" rel="stylesheet" />
+    <link href="/stylesheets/syntax.css" rel="stylesheet" />
+    <!--[if lte IE 9]><link href="/stylesheets/ie9.css" rel="stylesheet" /><![endif]-->
+		<!--[if lte IE 8]><link href="/stylesheets/ie8.css" rel="stylesheet" /><![endif]-->
+
+  </head>
+
+  <body class="may-2017 may-2017_sourcekitten">
+    <!-- Wrapper -->
+		<div id="wrapper">
+
+      <!-- Header -->
+      <header id="header">
+        <div class="inner">
+
+          <!-- Logo -->
+          <a href="/" class="logo">
+            <span class="symbol"><img src="/images/logo.svg" alt="Logo" /></span><span class="title">Pragmatic Swift</span>
+          </a>
+
+        </div>
+      </header>
+      
+      <!-- Main -->
+      <div id="main">
+        <div class="inner">
+          <article class="style1 content">
+            <h1>SourceKitten</h1>
+
+<p><a href="https://github.com/jpsim/SourceKitten">SourceKitten</a> is a command line utility wrapping <a href="https://github.com/apple/swift/tree/master/tools/SourceKit">SourceKit</a>.
+SourceKit supports editor functionality to work effectively with Swift such as code completion, indexing or syntax colouring. Xcode&rsquo;s editor relies on SourceKit for this functionality, for example.</p>
+
+<p>SourceKitten enables you to use these abilities yourself by providing high-level commands to extract documentation comments, get structure or syntax information as well as look up code completion suggestions.</p>
+
+<p>Let&rsquo;s walk through these step by step and see how you can work with the results of these commands, using <a href="https://github.com/Alamofire/Alamofire">Alamofire</a> as a sample project.</p>
+
+<h2>Commands</h2>
+
+<h3>Code Completion</h3>
+
+<p>In order to look up code completion suggestions you need to provide a source file path as well as an offset within this file for which completions should be looked up for.</p>
+
+<p>For example the following invocation points at the start of a switch case statement over an enumeration. Here the completions are restricted to the relevant enumeration cases.</p>
+<pre class="codehilite swift"><code>                <span class="n">boundaryText</span> <span class="o">=</span> <span class="s">"--</span><span class="se">\(</span><span class="n">boundary</span><span class="se">)\(</span><span class="kt">EncodingCharacters</span><span class="o">.</span><span class="n">crlf</span><span class="se">)</span><span class="s">"</span>
+            <span class="k">case</span> <span class="o">.</span><span class="nv">encapsulated</span><span class="p">:</span>
+                <span class="n">boundaryText</span> <span class="o">=</span> <span class="s">"</span><span class="se">\(</span><span class="kt">EncodingCharacters</span><span class="o">.</span><span class="n">crlf</span><span class="se">)</span><span class="s">--</span><span class="se">\(</span><span class="n">boundary</span><span class="se">)\(</span><span class="kt">EncodingCharacters</span><span class="o">.</span><span class="n">crlf</span><span class="se">)</span><span class="s">"</span>
+            <span class="k">case</span> <span class="o">.</span><span class="nv">final</span><span class="p">:</span>
+                  <span class="o">^</span>
+                <span class="n">boundaryText</span> <span class="o">=</span> <span class="s">"</span><span class="se">\(</span><span class="kt">EncodingCharacters</span><span class="o">.</span><span class="n">crlf</span><span class="se">)</span><span class="s">--</span><span class="se">\(</span><span class="n">boundary</span><span class="se">)</span><span class="s">--</span><span class="se">\(</span><span class="kt">EncodingCharacters</span><span class="o">.</span><span class="n">crlf</span><span class="se">)</span><span class="s">"</span>
+            <span class="p">}</span>
+            <span class="k">return</span> <span class="n">boundaryText</span><span class="o">.</span><span class="nf">data</span><span class="p">(</span><span class="nv">using</span><span class="p">:</span> <span class="kt">String</span><span class="o">.</span><span class="kt">Encoding</span><span class="o">.</span><span class="n">utf8</span><span class="p">,</span> <span class="nv">allowLossyConversion</span><span class="p">:</span> <span class="kc">false</span><span class="p">)</span><span class="o">!</span>
+</code></pre><pre class="codehilite shell"><code><span class="gp">$ </span>sourcekitten <span class="nb">complete</span> --file Source/MultipartFormData.swift --offset 3068
+</code></pre><pre class="codehilite json"><code><span class="p">[{</span><span class="w">
+  </span><span class="s2">"descriptionKey"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"encapsulated"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"kind"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"source.lang.swift.decl.enumelement"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"name"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"encapsulated"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"sourcetext"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"encapsulated"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"numBytesToErase"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"typeName"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"MultipartFormData.BoundaryGenerator.BoundaryType"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"associatedUSRs"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"s:FOVC17MultipartFormData17MultipartFormData17BoundaryGenerator12BoundaryType12encapsulatedFMS2_S2_"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"moduleName"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"MultipartFormData"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"context"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"source.codecompletion.context.exprspecific"</span><span class="w">
+</span><span class="p">},</span><span class="w"> </span><span class="p">{</span><span class="w">
+  </span><span class="s2">"descriptionKey"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"final"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"kind"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"source.lang.swift.decl.enumelement"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"name"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"final"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"sourcetext"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"final"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"numBytesToErase"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"typeName"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"MultipartFormData.BoundaryGenerator.BoundaryType"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"associatedUSRs"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"s:FOVC17MultipartFormData17MultipartFormData17BoundaryGenerator12BoundaryType5finalFMS2_S2_"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"moduleName"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"MultipartFormData"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"context"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"source.codecompletion.context.exprspecific"</span><span class="w">
+</span><span class="p">},</span><span class="w"> </span><span class="p">{</span><span class="w">
+  </span><span class="s2">"descriptionKey"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"initial"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"kind"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"source.lang.swift.decl.enumelement"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"name"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"initial"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"sourcetext"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"initial"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"numBytesToErase"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"typeName"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"MultipartFormData.BoundaryGenerator.BoundaryType"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"associatedUSRs"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"s:FOVC17MultipartFormData17MultipartFormData17BoundaryGenerator12BoundaryType7initialFMS2_S2_"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"moduleName"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"MultipartFormData"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"context"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"source.codecompletion.context.exprspecific"</span><span class="w">
+</span><span class="p">}]</span><span class="w">
+</span></code></pre>
+<p>Elsewhere you may receive methods and operators applicable to strings:</p>
+<pre class="codehilite swift"><code>        <span class="k">var</span> <span class="nv">headerText</span> <span class="o">=</span> <span class="s">""</span>
+
+        <span class="k">for</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="k">in</span> <span class="n">bodyPart</span><span class="o">.</span><span class="n">headers</span> <span class="p">{</span>
+            <span class="n">headerText</span> <span class="o">+=</span> <span class="s">"</span><span class="se">\(</span><span class="n">key</span><span class="se">)</span><span class="s">: </span><span class="se">\(</span><span class="n">value</span><span class="se">)\(</span><span class="kt">EncodingCharacters</span><span class="o">.</span><span class="n">crlf</span><span class="se">)</span><span class="s">"</span>
+                      <span class="o">^</span>
+        <span class="p">}</span>
+        <span class="n">headerText</span> <span class="o">+=</span> <span class="kt">EncodingCharacters</span><span class="o">.</span><span class="n">crlf</span>
+        <span class="k">return</span> <span class="n">headerText</span><span class="o">.</span><span class="nf">data</span><span class="p">(</span><span class="nv">using</span><span class="p">:</span> <span class="kt">String</span><span class="o">.</span><span class="kt">Encoding</span><span class="o">.</span><span class="n">utf8</span><span class="p">,</span> <span class="nv">allowLossyConversion</span><span class="p">:</span> <span class="kc">false</span><span class="p">)</span><span class="o">!</span>
+</code></pre><pre class="codehilite shell"><code><span class="gp">$ </span>sourcekitten <span class="nb">complete</span> --file Source/MultipartFormData.swift --offset 18149
+</code></pre><pre class="codehilite json"><code><span class="p">[</span><span class="s2">"..."</span><span class="p">,</span><span class="w"> </span><span class="p">{</span><span class="w">
+  </span><span class="s2">"descriptionKey"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"+="</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"kind"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"source.lang.swift.decl.function.operator.infix"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"name"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"+="</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"sourcetext"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"+= &lt;#T##String#&gt;"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"numBytesToErase"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"typeName"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"Void"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"moduleName"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"Swift"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"context"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"source.codecompletion.context.othermodule"</span><span class="w">
+</span><span class="p">},</span><span class="w">
+</span><span class="s2">"..."</span><span class="w">
+</span><span class="p">]</span><span class="w">
+</span></code></pre>
+<p>For more details on what kind of contexts code completion operates in you can review <a href="https://github.com/apple/swift/blob/master/lib/IDE/CodeCompletion.cpp">the implementation</a>.</p>
+
+<h3>Syntax</h3>
+
+<p>This command simply returns an array of tokens contained in the given file, indicating their type and range (offset and length).</p>
+<pre class="codehilite shell"><code><span class="gp">$ </span>sourcekitten syntax --file Source/Result.swift
+</code></pre><pre class="codehilite json"><code><span class="p">[</span><span class="w">
+  </span><span class="s2">"..."</span><span class="p">,</span><span class="w">
+  </span><span class="p">{</span><span class="w">
+    </span><span class="s2">"type"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"source.lang.swift.syntaxtype.identifier"</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"offset"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">3514</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"length"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="s2">"..."</span><span class="w">
+</span><span class="p">]</span><span class="w">
+</span></code></pre>
+<p>For a full list of types this might return, see the <a href="https://github.com/apple/swift/blob/master/tools/SourceKit/lib/SwiftLang/SwiftLangSupport.cpp#L402-L419">SourceKit source code</a>.</p>
+
+<h3>Structure &amp; Documentation</h3>
+
+<p>Describing both the structure and documentation for source files is closely related.
+The following invocation will return the structure of the given source file.</p>
+<pre class="codehilite shell"><code><span class="gp">$ </span>sourcekitten structure --file Source/Result.swift
+</code></pre><pre class="codehilite json"><code><span class="p">{</span><span class="w">
+          </span><span class="s2">"key.offset"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">2869</span><span class="p">,</span><span class="w">
+          </span><span class="s2">"key.nameoffset"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">2873</span><span class="p">,</span><span class="w">
+          </span><span class="s2">"key.accessibility"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"source.lang.swift.accessibility.public"</span><span class="p">,</span><span class="w">
+          </span><span class="s2">"key.typename"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"String"</span><span class="p">,</span><span class="w">
+          </span><span class="s2">"key.length"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">23</span><span class="p">,</span><span class="w">
+          </span><span class="s2">"key.name"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"description"</span><span class="p">,</span><span class="w">
+          </span><span class="s2">"key.bodyoffset"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">2894</span><span class="p">,</span><span class="w">
+          </span><span class="s2">"key.kind"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"source.lang.swift.decl.var.instance"</span><span class="p">,</span><span class="w">
+          </span><span class="s2">"key.namelength"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">11</span><span class="p">,</span><span class="w">
+          </span><span class="s2">"key.bodylength"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">141</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+</span></code></pre>
+<p>Meanwhile, in order to extract documentation SourceKitten will invoke <code>xcodebuild</code> under the hood, so you should run it in a folder containing an Xcode project.
+If you&rsquo;re just experimenting it can be helpful to create a small sample project rather than waiting for a full build of your production app.</p>
+
+<p>The simplest invocation of the documentation command will yield documentation for each source file in the project.
+The output below is a snippet focused on the same source code as the structure extracted above.
+Notice how the basic attributes are shared, but plenty of additional keys have been added such as various views of the documentation comments.</p>
+
+<p>Another key benefit of compiling as part of generating documentation is receiving accurate type information or identifiers for entities like <em>Unified Symbol Resolution</em> (USR) (See the <a href="https://raw.githubusercontent.com/apple/swift/7e68e02b4eaa1cf44037a383129cbef60ea55d67/docs/Lexicon.rst">Swift lexicon</a>).</p>
+<pre class="codehilite shell"><code><span class="gp">$ </span>sourcekitten doc
+</code></pre><pre class="codehilite json"><code><span class="p">{</span><span class="w">
+            </span><span class="s2">"key.accessibility"</span><span class="p">:</span><span class="w"> </span><span class="s2">"source.lang.swift.accessibility.public"</span><span class="p">,</span><span class="w">
+            </span><span class="s2">"key.length"</span><span class="p">:</span><span class="w"> </span><span class="mi">23</span><span class="p">,</span><span class="w">
+            </span><span class="s2">"key.overrides"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+              </span><span class="p">{</span><span class="w">
+                </span><span class="s2">"key.usr"</span><span class="p">:</span><span class="w"> </span><span class="s2">"s:vPs23CustomStringConvertible11descriptionSS"</span><span class="w">
+              </span><span class="p">}</span><span class="w">
+            </span><span class="p">],</span><span class="w">
+            </span><span class="s2">"key.doc.type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Other"</span><span class="p">,</span><span class="w">
+            </span><span class="s2">"key.parsed_scope.start"</span><span class="p">:</span><span class="w"> </span><span class="mi">79</span><span class="p">,</span><span class="w">
+            </span><span class="s2">"key.kind"</span><span class="p">:</span><span class="w"> </span><span class="s2">"source.lang.swift.decl.var.instance"</span><span class="p">,</span><span class="w">
+            </span><span class="s2">"key.doc.full_as_xml"</span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;Other file=</span><span class="se">\"</span><span class="s2">./Source/Result.swift</span><span class="se">\"</span><span class="s2"> line=</span><span class="se">\"</span><span class="s2">79</span><span class="se">\"</span><span class="s2"> column=</span><span class="se">\"</span><span class="s2">16</span><span class="se">\"</span><span class="s2">&gt;&lt;Name&gt;description&lt;/Name&gt;&lt;USR&gt;s:vO9Alamofire6Result11descriptionSS&lt;/USR&gt;&lt;Declaration&gt;public var description: String { get }&lt;/Declaration&gt;&lt;Abstract&gt;&lt;Para&gt;The textual representation used when written to an output stream, which includes whether the result was a success or failure.&lt;/Para&gt;&lt;/Abstract&gt;&lt;/Other&gt;"</span><span class="p">,</span><span class="w">
+            </span><span class="s2">"key.nameoffset"</span><span class="p">:</span><span class="w"> </span><span class="mi">2873</span><span class="p">,</span><span class="w">
+            </span><span class="s2">"key.typename"</span><span class="p">:</span><span class="w"> </span><span class="s2">"String"</span><span class="p">,</span><span class="w">
+            </span><span class="s2">"key.doc.column"</span><span class="p">:</span><span class="w"> </span><span class="mi">16</span><span class="p">,</span><span class="w">
+            </span><span class="s2">"key.doc.comment"</span><span class="p">:</span><span class="w"> </span><span class="s2">"The textual representation used when written to an output stream, which includes whether the result was a</span><span class="se">\n</span><span class="s2">success or failure."</span><span class="p">,</span><span class="w">
+            </span><span class="s2">"key.bodyoffset"</span><span class="p">:</span><span class="w"> </span><span class="mi">2894</span><span class="p">,</span><span class="w">
+            </span><span class="s2">"key.filepath"</span><span class="p">:</span><span class="w"> </span><span class="s2">"./Source/Result.swift"</span><span class="p">,</span><span class="w">
+            </span><span class="s2">"key.doc.file"</span><span class="p">:</span><span class="w"> </span><span class="s2">"./Source/Result.swift"</span><span class="p">,</span><span class="w">
+            </span><span class="s2">"key.annotated_decl"</span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;Declaration&gt;public var description: &lt;Type usr=</span><span class="se">\"</span><span class="s2">s:SS</span><span class="se">\"</span><span class="s2">&gt;String&lt;/Type&gt; { get }&lt;/Declaration&gt;"</span><span class="p">,</span><span class="w">
+            </span><span class="s2">"key.fully_annotated_decl"</span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;decl.var.instance&gt;&lt;syntaxtype.keyword&gt;public&lt;/syntaxtype.keyword&gt; &lt;syntaxtype.keyword&gt;var&lt;/syntaxtype.keyword&gt; &lt;decl.name&gt;description&lt;/decl.name&gt;: &lt;decl.var.type&gt;&lt;ref.struct usr=</span><span class="se">\"</span><span class="s2">s:SS</span><span class="se">\"</span><span class="s2">&gt;String&lt;/ref.struct&gt;&lt;/decl.var.type&gt; { &lt;syntaxtype.keyword&gt;get&lt;/syntaxtype.keyword&gt; }&lt;/decl.var.instance&gt;"</span><span class="p">,</span><span class="w">
+            </span><span class="s2">"key.doc.declaration"</span><span class="p">:</span><span class="w"> </span><span class="s2">"public var description: String { get }"</span><span class="p">,</span><span class="w">
+            </span><span class="s2">"key.typeusr"</span><span class="p">:</span><span class="w"> </span><span class="s2">"_TtSS"</span><span class="p">,</span><span class="w">
+            </span><span class="s2">"key.offset"</span><span class="p">:</span><span class="w"> </span><span class="mi">2869</span><span class="p">,</span><span class="w">
+            </span><span class="s2">"key.doc.line"</span><span class="p">:</span><span class="w"> </span><span class="mi">79</span><span class="p">,</span><span class="w">
+            </span><span class="s2">"key.doc.name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"description"</span><span class="p">,</span><span class="w">
+            </span><span class="s2">"key.name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"description"</span><span class="p">,</span><span class="w">
+            </span><span class="s2">"key.usr"</span><span class="p">:</span><span class="w"> </span><span class="s2">"s:vO9Alamofire6Result11descriptionSS"</span><span class="p">,</span><span class="w">
+            </span><span class="s2">"key.parsed_declaration"</span><span class="p">:</span><span class="w"> </span><span class="s2">"public var description: String"</span><span class="p">,</span><span class="w">
+            </span><span class="s2">"key.namelength"</span><span class="p">:</span><span class="w"> </span><span class="mi">11</span><span class="p">,</span><span class="w">
+            </span><span class="s2">"key.parsed_scope.end"</span><span class="p">:</span><span class="w"> </span><span class="mi">86</span><span class="p">,</span><span class="w">
+            </span><span class="s2">"key.bodylength"</span><span class="p">:</span><span class="w"> </span><span class="mi">141</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+</span></code></pre>
+<p>If you normally need to pass additional arguments to <code>xcodebuild</code> you can also use these with SourceKitten by adding them to the invocation following a double dash.</p>
+<pre class="codehilite shell"><code><span class="gp">$ </span>sourcekitten doc -- -scheme App
+</code></pre>
+<h2>Feral SourceKittens: Examples of usage in the wild</h2>
+
+<h3>In other projects</h3>
+
+<p>A prominent user of SourceKitten is Realm&rsquo;s documentation generator <a href="https://github.com/realm/jazzy">Jazzy</a> which provides a great way to generate documentation for your codebase.</p>
+
+<h3>In your own projects</h3>
+
+<p>A quick way to start using SourceKitten yourself is by combining an invocation with <a href="https://stedolan.github.io/jq/"><code>jq</code></a> which offers <code>sed</code>-like command line processing for JSON.</p>
+
+<p>For example you can compare the relative amount of comments in a source file:</p>
+<pre class="codehilite plaintext"><code>$ sourcekitten syntax --file Source/Result.swift | jq 'map(select(.type != "source.lang.swift.syntaxtype.doccomment")) | length'
+239
+
+$sourcekitten syntax --file Source/Result.swift | jq 'map(select(.type == "source.lang.swift.syntaxtype.doccomment")) | length'
+78
+</code></pre>
+<p>Once you have prototyped an interesting query you could of course use this as part of a more complex workflow, such as the following Ruby snippet below.</p>
+<pre class="codehilite ruby"><code><span class="c1">#!/usr/bin/env ruby</span>
+
+<span class="nb">require</span> <span class="s1">'json'</span>
+
+<span class="n">contents</span> <span class="o">=</span> <span class="no">File</span><span class="p">.</span><span class="nf">read</span><span class="p">(</span><span class="s1">'Source/Result.swift'</span><span class="p">)</span>
+<span class="n">syntax</span> <span class="o">=</span> <span class="no">JSON</span><span class="p">.</span><span class="nf">parse</span><span class="sb">`sourcekitten syntax --file Source/Result.swift`</span>
+
+<span class="n">syntax</span><span class="p">.</span><span class="nf">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">token</span><span class="o">|</span>
+  <span class="nb">puts</span> <span class="s2">"</span><span class="si">#{</span><span class="n">token</span><span class="p">[</span><span class="s1">'type'</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">#{</span><span class="n">contents</span><span class="p">.</span><span class="nf">slice</span><span class="p">(</span><span class="n">token</span><span class="p">[</span><span class="s1">'offset'</span><span class="p">],</span> <span class="n">token</span><span class="p">[</span><span class="s1">'length'</span><span class="p">])</span><span class="si">}</span><span class="s2">"</span>
+<span class="k">end</span>
+
+</code></pre>
+<h2>Natural Predators</h2>
+
+<p>While SourceKitten is a great way to gain better insights into your Swift projects today and make these easier to work with, the Swift team and contributors are also working on providing such support as part of the tooling shipped with the language, under the umbrella of the <a href="https://lists.swift.org/pipermail/swift-dev/Week-of-Mon-20170206/004066.html">Swift Syntax Structured Editing Library</a> which lives at <a href="https://github.com/apple/swift/tree/master/lib/Syntax"><code>lib/Syntax</code> in the Swift repository</a>.</p>
+
+          </article>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <footer id="footer">
+        <div class="inner">
+          <section>
+            <h2>Follow</h2>
+            <ul class="icons">
+              <li><a href="#" class="icon style2 fa-twitter"><span class="label">Twitter</span></a></li>
+              <li><a href="#" class="icon style2 fa-facebook"><span class="label">Facebook</span></a></li>
+              <li><a href="#" class="icon style2 fa-instagram"><span class="label">Instagram</span></a></li>
+              <li><a href="#" class="icon style2 fa-dribbble"><span class="label">Dribbble</span></a></li>
+              <li><a href="#" class="icon style2 fa-github"><span class="label">GitHub</span></a></li>
+              <li><a href="#" class="icon style2 fa-500px"><span class="label">500px</span></a></li>
+              <li><a href="#" class="icon style2 fa-phone"><span class="label">Phone</span></a></li>
+              <li><a href="mailto:info@swissmobidevs.org" class="icon style2 fa-envelope-o"><span class="label">Email</span></a></li>
+            </ul>
+          </section>
+          <ul class="copyright">
+            <li>&copy; <a href="https://swissmobidevs.org" target="_blank">Swiss Mobile Developers Association</a>. All rights reserved</li>
+          </ul>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/javascripts/jquery.js"></script>
+    <script src="/javascripts/skel.js"></script>
+    <script src="/javascripts/util.js"></script>
+    <!--[if lte IE 8]><script src="/javascripts/respond.js"></script><![endif]-->
+    <script src="/javascripts/main.js"></script>
+    <script src="/javascripts/all.js"></script>
+
+  </body>
+</html>

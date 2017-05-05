@@ -1,0 +1,237 @@
+<!doctype html>
+<html>
+  <head>
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Use title if it's in the page YAML frontmatter -->
+    <title>App Security in Swift</title>
+
+    <link href='//fonts.googleapis.com/css?family=Inconsolata|Open+Sans:400,600' rel='stylesheet' type='text/css'>
+
+    <!--[if lte IE 8]><script src="javascript/ie/html5shiv.js"></script><![endif]-->
+    <link href="/stylesheets/site.css" rel="stylesheet" />
+    <link href="/stylesheets/syntax.css" rel="stylesheet" />
+    <!--[if lte IE 9]><link href="/stylesheets/ie9.css" rel="stylesheet" /><![endif]-->
+		<!--[if lte IE 8]><link href="/stylesheets/ie8.css" rel="stylesheet" /><![endif]-->
+
+  </head>
+
+  <body class="may-2017 may-2017_app-security-in-swift">
+    <!-- Wrapper -->
+		<div id="wrapper">
+
+      <!-- Header -->
+      <header id="header">
+        <div class="inner">
+
+          <!-- Logo -->
+          <a href="/" class="logo">
+            <span class="symbol"><img src="/images/logo.svg" alt="Logo" /></span><span class="title">Pragmatic Swift</span>
+          </a>
+
+        </div>
+      </header>
+      
+      <!-- Main -->
+      <div id="main">
+        <div class="inner">
+          <article class="style1 content">
+            <h1>App Security</h1>
+
+<h2>TL;DR</h2>
+
+<ul>
+<li>Security is not a set of methods, it&rsquo;s a system. It&rsquo;s better to think about threats and trust as early as you can.</li>
+<li>Avoid plaintext at all cost. Encrypt your communication. Encrypt your local data as required.</li>
+<li>If you don&rsquo;t store the password, it can&rsquo;t be leaked. ;)</li>
+<li>But if you need to store passwords, do it right!</li>
+<li>It&rsquo;s not paranoia if it&rsquo;s true.</li>
+</ul>
+
+<hr>
+
+<p><img src="https://imgs.xkcd.com/comics/security.png" alt="Actual reality: nobody cares about his secrets. (Also, I would be hard-pressed to find that wrench for $5.)" /></p>
+
+<p>Keeping your user data safe and private is not the simplest of tasks. There is no golden solution; there&rsquo;s no sure proof way of preventing user data from being stolen. If someone has the means and really wants to, the system will be compromised.</p>
+
+<blockquote>
+<p>Two people are walking in the woods, they spot a bear. Security is not outrunning the bear. It&rsquo;s outrunning the other person.</p>
+</blockquote>
+
+<p>With that bleak image in mind, let&rsquo;s see what we can do, to make it either as hard as possible, or as hard as feasible, for data to be breached.</p>
+
+<p>Sure, security is hard, and there&rsquo;s no bulletproof solution. But there&rsquo;s a lot of small things we can still do, that significantly improve our chances of keeping the data safe.</p>
+
+<h2>Take a step back</h2>
+
+<p>The first thing we should think about is if we need to store that data at all. We’re often storing data we don&rsquo;t need, out of habit or because of external pressures. Is it crucial that we store the user&rsquo;s address? Their phone numbers? Their full names? What kind of genitalia they have? Sometimes that answer is yes, but most of the time, it&rsquo;s no. Remember: the more data you have, the more appetising your dataset becomes, and the more you have to work to secure it.</p>
+
+<p>Once we figured out what data is really needed and what data can be discarded, the next step is figuring out risk and threat models. What are the most vulnerable points? What is more likely to happen? What can&rsquo;t be prevented?</p>
+
+<p>There&rsquo;s no point in making a connection super secure if the private key is kept locally in plaintext, in a file called <code>myprivatekey</code>.</p>
+
+<blockquote>
+<p>Security is always a trade-off, between convenience and safety, between the effort you can put in and the risk level you face.</p>
+</blockquote>
+
+<h3>Start Early</h3>
+
+<p>There&rsquo;s a very simple reason why iOS and the iPhone are so much more secure than Android. One of them was conceived with privacy and security in mind; the other wasn&rsquo;t. </p>
+
+<blockquote>
+<p>It&rsquo;s much easier to build something with security in mind from the start than to build something and then try to tack some security onto it.</p>
+</blockquote>
+
+<p>Sometimes, making something that is already built secure might mean having to deconstruct the whole thing and put it back together again. Sometimes not even that can help.</p>
+
+<h3>Never roll your own crypto</h3>
+
+<p>Cryptography is not easy. It&rsquo;s not simple to conceive it, it&rsquo;s not easy to implement it, and it&rsquo;s not easy to test it. There are a plethora of examples of really good cryptographic tools being broken all the time. Because computers become more powerful over time, because of bugs that weren&rsquo;t caught before. Tools will fail you, all you can do is try to make them have the least possible impact on your data.</p>
+
+<p><img src="/may-2017/app-security-in-swift/schneier.png" alt="Schneier" /></p>
+
+<p>For instance, if you&rsquo;re using <a href="https://en.wikipedia.org/wiki/Ephemeral_key">ephemeral keys</a> for your communications, even if a tool is cracked or a key is leaked, the damage will be minimal, compared to using the same key for everything. Think of using ephemeral keys as not re-using your passwords.</p>
+
+<h2>Storing keys and tokens, embracing the Keychain</h2>
+
+<p>Plaintext is your enemy. Don&rsquo;t store your keys as a variable in code. Don&rsquo;t store it inside a local file. If something is sensitive, use the Keychain. Although it has a quite unfriendly API, there are <a href="https://github.com/marketplacer/keychain-swift">good wrappers</a> out there.</p>
+<pre class="codehilite swift"><code><span class="c1">// Don't do this:</span>
+<span class="k">let</span> <span class="nv">mySecretPassword</span><span class="p">:</span> <span class="kt">String</span> <span class="o">=</span> <span class="s">"Super secret password, tell nobody!"</span>
+
+<span class="c1">// Try this instead:</span>
+<span class="k">let</span> <span class="nv">mySecretPassword</span><span class="p">:</span> <span class="kt">String</span> <span class="o">=</span> <span class="n">keychainWrapper</span><span class="o">.</span><span class="nf">string</span><span class="p">(</span><span class="nv">for</span><span class="p">:</span> <span class="n">passKey</span><span class="p">)</span>
+</code></pre>
+<p>It&rsquo;s a small step that already improves things by quite a lot.</p>
+
+<blockquote>
+<p>Do you want to know more about key management? What goals and features should a key management system have, how to generate &amp; store keys, should we obfuscate or encrypt keys? Take a look at <a href="https://twitter.com/vixentael">@vixentael</a>&lsquo;s <a href="https://speakerdeck.com/vixentael/keys-from-the-castle-ancient-art-of-managing-keys-and-trust">last talk here</a>.</p>
+</blockquote>
+
+<p>Consider <strong>pinning your SSL certs</strong> and its public keys. Many iOS libraries will provide you with ways of doing SSL certificate pinning, but you probably want to pin the certificate&rsquo;s public key instead, since pinning the SSL certificate itself means that if they are revoked or expired, your app might not work until you update the binary with new certificates. As with most things security, you’ll have to weight the pros and cons of each solution. Sometimes it makes sense to give away a bit of extra security in the name of user convenience; sometimes it doesn’t. </p>
+
+<p>Just remember: if it’s too user-hostile, they won’t use it. The worst thing you can do is making your users fight your system, instead of embracing it.</p>
+
+<p>You’ll find more information on pinning certificates and public keys <a href="https://www.owasp.org/index.php/Certificate_and_Public_Key_Pinning#iOS">in this great OWASP cheat sheet</a>.</p>
+
+<h2>Plaintext is the enemy</h2>
+
+<p><img src="http://petslady.com/sites/default/files/inline-images/cattire.jpg" alt="Cattire" /></p>
+
+<p>Be it passwords, API keys, your local database, your cache, your users&rsquo; personal details, one thing remains true: plaintext is your enemy. It doesn&rsquo;t matter how much care and effort you put into making your application secure, your server secure, your transport secure, if someone can just plug a phone, open iTunes and retrieve your certificates and keys, or even worse: lift them off from Github. Encryption is key.</p>
+
+<p><img src="/may-2017/app-security-in-swift/apikey.png" alt="Not a pretty picture." /></p>
+
+<h2>How to easily and safely encrypt/decrypt user data</h2>
+
+<p>There&rsquo;re many tools for symmetric and asymmetric encryption. Most of them are built on a top of existing community-proven libraries. We can name only a few, but there are more.</p>
+
+<ul>
+<li><a href="https://github.com/krzyzanowskim/CryptoSwift">CryptoSwift</a></li>
+<li><a href="https://github.com/RNCryptor/RNCryptor">RNCrypto</a></li>
+<li><a href="https://github.com/cossacklabs/themis">Themis</a></li>
+</ul>
+
+<p>For example, <a href="https://github.com/cossacklabs/themis">Themis</a> provides a good context-based model for encrypting and decrypting data. A context-based model uses not only a password but also a context, as a means of encrypting and decrypting data. We’ll be using the <a href="https://github.com/cossacklabs/themis/wiki/Secure-Cell-cryptosystem">Secure Cell</a> model for this.</p>
+<pre class="codehilite swift"><code><span class="c1">// Firstly, create a TSCellSeal using a password. Remember to keep this password safe! Embrace the Keychain.</span>
+<span class="k">let</span> <span class="nv">masterKeyData</span> <span class="o">=</span> <span class="n">password</span><span class="o">.</span><span class="nf">data</span><span class="p">(</span><span class="nv">using</span><span class="p">:</span> <span class="o">.</span><span class="n">utf8</span><span class="p">)</span>
+<span class="k">guard</span> <span class="k">let</span> <span class="nv">cellSeal</span><span class="p">:</span> <span class="kt">TSCellSeal</span> <span class="o">=</span> <span class="kt">TSCellSeal</span><span class="p">(</span><span class="nv">key</span><span class="p">:</span> <span class="n">masterKeyData</span><span class="p">)</span> <span class="k">else</span> <span class="p">{</span>
+    <span class="nf">print</span><span class="p">(</span><span class="s">"Error occurred while initializing object cellSeal"</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="kc">nil</span>
+<span class="p">}</span>
+
+<span class="c1">// Then we can encrypt some data.</span>
+<span class="c1">// Now the context can be anything, we recommend you pick something that creates a secure hard-to-guess association to the data being de/encrypted. For example: it's database row number.</span>
+<span class="k">let</span> <span class="nv">encryptedMessage</span><span class="p">:</span> <span class="kt">Data</span>
+<span class="k">do</span> <span class="p">{</span>
+    <span class="n">encryptedMessage</span> <span class="o">=</span> <span class="k">try</span> <span class="n">cell</span><span class="o">.</span><span class="nf">wrap</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="nf">data</span><span class="p">(</span><span class="nv">using</span><span class="p">:</span> <span class="o">.</span><span class="n">utf8</span><span class="p">),</span>
+                    <span class="nv">context</span><span class="p">:</span> <span class="n">context</span><span class="o">.</span><span class="nf">data</span><span class="p">(</span><span class="nv">using</span><span class="p">:</span> <span class="o">.</span><span class="n">utf8</span><span class="p">))</span>
+<span class="p">}</span> <span class="k">catch</span> <span class="k">let</span> <span class="nv">error</span> <span class="k">as</span> <span class="kt">NSError</span> <span class="p">{</span>
+    <span class="nf">print</span><span class="p">(</span><span class="s">"Error occurred while encrypting </span><span class="se">\(</span><span class="n">error</span><span class="se">)</span><span class="s">"</span><span class="p">,</span> <span class="kd">#function</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="kc">nil</span>
+<span class="p">}</span>
+
+<span class="c1">// Now to decrypt it, we need the same password as well as the same context.</span>
+<span class="k">let</span> <span class="nv">decryptedMessage</span><span class="p">:</span> <span class="kt">Data</span>
+<span class="k">do</span> <span class="p">{</span>
+  <span class="n">decryptedMessage</span> <span class="o">=</span> <span class="k">try</span> <span class="n">cell</span><span class="o">.</span><span class="nf">unwrapData</span><span class="p">(</span><span class="n">encryptedMessage</span><span class="p">,</span> <span class="nv">context</span><span class="p">:</span> <span class="n">context</span><span class="o">.</span><span class="nf">data</span><span class="p">(</span><span class="nv">using</span><span class="p">:</span> <span class="o">.</span><span class="n">utf8</span><span class="p">))</span>
+<span class="p">}</span> <span class="k">catch</span> <span class="k">let</span> <span class="nv">error</span> <span class="k">as</span> <span class="kt">NSError</span> <span class="p">{</span>
+  <span class="nf">print</span><span class="p">(</span><span class="s">"Error occurred while decrypting </span><span class="se">\(</span><span class="n">error</span><span class="se">)</span><span class="s">"</span><span class="p">,</span> <span class="kd">#function</span><span class="p">)</span>
+
+  <span class="k">return</span> <span class="kc">nil</span>
+<span class="p">}</span>
+</code></pre>
+<p>Again, a complex model made simpler with Themis, but still quite complicated. Using ephemeral keys, using key derivation, all behind the scenes, abstracting the complexity of security.</p>
+
+<h2>SSL is not enough. Certificate Pinning is not enough.</h2>
+
+<p><img src="http://www.funnycatsite.com/pictures/Security_Cat.jpg" alt="Security cat" />
+<caption>I&rsquo;m here to keep your data safe.</caption></p>
+
+<p>You&rsquo;ve been reading a lot about the topic, and you feel confident that your app is well configured. It will only accept HTTPS connections. It pinned all the certificates for the critical stuff. </p>
+
+<p>Unfortunately, SSL is a fragile system. (Remember, that <a href="https://security.googleblog.com/2016/10/distrusting-wosign-and-startcom.html">story about WoSign</a>, that issued certificates even if they&rsquo;re not the domain owners?) Do not rely on SSL encryption if your app is dealing with <em>sensitive data</em>. </p>
+
+<ul>
+<li><a href="https://www.cossacklabs.com/avoid-ssl-for-your-next-app.html">Why you should avoid SSL in your next app?</a></li>
+</ul>
+
+<p>Add a layer of encryption for your network connection. Encrypt data before sending, decrypt after receiving. In the end-to-end world, a server wouldn&rsquo;t even know what this data is.</p>
+
+<h2>Conclusion</h2>
+
+<p>There are a simple set of tools and concepts that can go a long way with minimal effort. While not all applications deal with bank transactions and therefore don&rsquo;t need the utmost security levels, most applications deal with a lot of user data, and that data should be kept just as safe.</p>
+
+<p>Don&rsquo;t just give the illusion of security. Don&rsquo;t give the illusion of insecurity either. </p>
+
+<p><img src="https://media.giphy.com/media/3o85xH5pfwcCXZyfg4/giphy.gif" alt="Giphy" /></p>
+
+<h1>Read more</h1>
+
+<ul>
+<li><a href="https://code.tutsplus.com/articles/securing-communications-on-ios--cms-28529">Securing Communications on iOS</a></li>
+<li><a href="https://realm.io/news/tryswift-anastasiia-voitova-building-user-centric-security-model-ios-applications-swift">Building a User-Centric Security Model in iOS Applications</a></li>
+<li><a href="https://medium.com/@vixentael/upgrading-approaches-to-the-secure-mobile-architectures-7a8fcb10d28a">Upgrading Approaches to the Secure Mobile Architectures</a></li>
+<li><a href="https://developer.apple.com/videos/play/wwdc2016/709/">Engineering Privacy for Your Users</a></li>
+</ul>
+
+          </article>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <footer id="footer">
+        <div class="inner">
+          <section>
+            <h2>Follow</h2>
+            <ul class="icons">
+              <li><a href="#" class="icon style2 fa-twitter"><span class="label">Twitter</span></a></li>
+              <li><a href="#" class="icon style2 fa-facebook"><span class="label">Facebook</span></a></li>
+              <li><a href="#" class="icon style2 fa-instagram"><span class="label">Instagram</span></a></li>
+              <li><a href="#" class="icon style2 fa-dribbble"><span class="label">Dribbble</span></a></li>
+              <li><a href="#" class="icon style2 fa-github"><span class="label">GitHub</span></a></li>
+              <li><a href="#" class="icon style2 fa-500px"><span class="label">500px</span></a></li>
+              <li><a href="#" class="icon style2 fa-phone"><span class="label">Phone</span></a></li>
+              <li><a href="mailto:info@swissmobidevs.org" class="icon style2 fa-envelope-o"><span class="label">Email</span></a></li>
+            </ul>
+          </section>
+          <ul class="copyright">
+            <li>&copy; <a href="https://swissmobidevs.org" target="_blank">Swiss Mobile Developers Association</a>. All rights reserved</li>
+          </ul>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/javascripts/jquery.js"></script>
+    <script src="/javascripts/skel.js"></script>
+    <script src="/javascripts/util.js"></script>
+    <!--[if lte IE 8]><script src="/javascripts/respond.js"></script><![endif]-->
+    <script src="/javascripts/main.js"></script>
+    <script src="/javascripts/all.js"></script>
+
+  </body>
+</html>

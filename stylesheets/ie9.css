@@ -1,0 +1,1 @@
+.tiles:after{content:'';display:block;clear:both}.tiles article{float:left}.tiles article>a{padding-top:50%;margin-top:-1.75em}body:not(.is-touch) .tiles article:hover>.image{-moz-transform:none;-webkit-transform:none;-ms-transform:none;transform:none}#footer>.inner section{float:left}#footer>.inner .copyright{clear:both;padding-top:2.4em}

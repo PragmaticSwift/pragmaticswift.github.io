@@ -1,0 +1,12 @@
+<h1>Pragmatic Swift - Issues 2017</h1>
+
+<p>Reminder: this repo will be public and all the issues and discussions are going to be readable by everyone.</p>
+
+<h3>Writing</h3>
+
+<p>Checkout the current repo and use the correct pull request about your article.
+Once the article is ready, move the card on the dedicated <a href="https://trello.com/b/3HGZJSkh/pragmatic-swift">Trello board</a> and let the editor/reviewer to read, fix typos and eventually give some suggestions in how to improve.</p>
+
+<h3>Review</h3>
+
+<p>While reviews, please comment on the PR directly on the line, so it&rsquo;s clear what the comment is about. If the comment is big or general, please use the PR as issue.</p>

@@ -1,0 +1,474 @@
+<!doctype html>
+<html>
+  <head>
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <!-- Use title if it's in the page YAML frontmatter -->
+    <title>Server Side Swift</title>
+
+    <link href='//fonts.googleapis.com/css?family=Inconsolata|Open+Sans:400,600' rel='stylesheet' type='text/css'>
+
+    <!--[if lte IE 8]><script src="javascript/ie/html5shiv.js"></script><![endif]-->
+    <link href="/stylesheets/site.css" rel="stylesheet" />
+    <link href="/stylesheets/syntax.css" rel="stylesheet" />
+    <!--[if lte IE 9]><link href="/stylesheets/ie9.css" rel="stylesheet" /><![endif]-->
+		<!--[if lte IE 8]><link href="/stylesheets/ie8.css" rel="stylesheet" /><![endif]-->
+
+  </head>
+
+  <body class="may-2017 may-2017_server-side-swift">
+    <!-- Wrapper -->
+		<div id="wrapper">
+
+      <!-- Header -->
+      <header id="header">
+        <div class="inner">
+
+          <!-- Logo -->
+          <a href="/" class="logo">
+            <span class="symbol"><img src="/images/logo.svg" alt="Logo" /></span><span class="title">Pragmatic Swift</span>
+          </a>
+
+        </div>
+      </header>
+      
+      <!-- Main -->
+      <div id="main">
+        <div class="inner">
+          <article class="style1 content">
+            <h1>Vapor and its callback and throwing stacks</h1>
+
+<p>This article is about Vapor, a framework for writing a server with Swift. I&rsquo;m an iOS developer at heart, and I love Swift, so it was only natural to eventually convert my own <a href="https://rolandleth.com">blog</a> to it. So I did, and I would like to present a couple of features that I found interesting - middleware, and their callback chain, and error handling. We&rsquo;ll also make use of protocols and extensions to create hierarchies, expand functionality, and better structure the project.</p>
+
+<p>Let&rsquo;s start with a (somewhat) simple server:</p>
+<pre class="codehilite swift"><code><span class="k">let</span> <span class="nv">drop</span> <span class="o">=</span> <span class="kt">Droplet</span><span class="p">()</span> <span class="c1">// 1</span>
+
+<span class="k">try</span><span class="p">?</span> <span class="nf">addProvider</span><span class="p">(</span><span class="kt">VaporPostgreSQL</span><span class="o">.</span><span class="kt">Provider</span><span class="o">.</span><span class="k">self</span><span class="p">)</span> <span class="c1">// 2</span>
+<span class="n">drop</span><span class="o">.</span><span class="n">preparations</span> <span class="o">+=</span> <span class="kt">Model</span><span class="o">.</span><span class="k">self</span> <span class="c1">// 3</span>
+
+<span class="n">drop</span><span class="o">.</span><span class="n">middleware</span><span class="o">.</span><span class="nf">insert</span><span class="p">(</span><span class="kt">RedirectMiddleWare</span><span class="p">(),</span> <span class="nv">at</span><span class="p">:</span> <span class="mi">0</span><span class="p">)</span> <span class="c1">// 4</span>
+<span class="n">drop</span><span class="o">.</span><span class="n">middleware</span><span class="o">.</span><span class="nf">append</span><span class="p">(</span><span class="kt">GzipMiddleWare</span><span class="p">())</span> <span class="c1">// 5</span>
+<span class="n">drop</span><span class="o">.</span><span class="n">middleware</span><span class="o">.</span><span class="nf">append</span><span class="p">(</span><span class="kt">HeadersMiddleware</span><span class="p">())</span>
+
+<span class="n">drop</span><span class="o">.</span><span class="nf">get</span><span class="p">(</span><span class="s">"/test"</span><span class="p">,</span> <span class="nv">handler</span><span class="p">:</span> <span class="p">{</span> <span class="n">request</span> <span class="k">in</span>
+    <span class="nf">print</span><span class="p">(</span><span class="s">"4"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="k">try</span> <span class="kt">JSON</span><span class="p">(</span><span class="nv">node</span><span class="p">:</span> <span class="s">"This is a test page."</span><span class="p">)</span>
+<span class="p">})</span>
+</code></pre>
+<p><em>Configuring the Droplet.</em></p>
+
+<p>We start by creating our droplet (1), we add a database provider (2) and a <code>Model</code> entity (3) to be used with it, then add our middleware. The order of the middleware usually doesn&rsquo;t matter and is done by <code>appending</code> (5) them. Sometimes, though, we might have very specific needs and we want one of the middleware to run first. In this case, we can insert it to be first on the stack (4), thus being the first one to be called, before any other internal ones.</p>
+
+<p>Now, onto the middleware: how they operate, and more on why the are added like that. Vapor offers a <code>Middleware</code> protocol, which requires just one method:</p>
+<pre class="codehilite swift"><code><span class="kd">func</span> <span class="nf">respond</span><span class="p">(</span><span class="n">to</span> <span class="nv">request</span><span class="p">:</span> <span class="kt">Request</span><span class="p">,</span> <span class="n">chainingTo</span> <span class="nv">next</span><span class="p">:</span> <span class="kt">Responder</span><span class="p">)</span> <span class="k">throws</span> <span class="o">-&gt;</span> <span class="kt">Response</span>
+</code></pre>
+<p><em>The Middleware&rsquo;s only method.</em></p>
+
+<p>Through this method, a middleware takes the request, modifies it (or not) accordingly, then either passes it to the next responder (which can be another middleware or an endpoint handler), which returns a response, modifies it (or not) accordingly, either directly creates and returns a response. We&rsquo;ll see each of these cases in the examples to follow.</p>
+
+<p>First on the stack, the <code>RedirectMiddleware</code>:</p>
+<pre class="codehilite swift"><code><span class="kd">struct</span> <span class="kt">RedirectMiddleware</span><span class="p">:</span> <span class="kt">Middleware</span> <span class="p">{</span>
+
+    <span class="kd">func</span> <span class="nf">respond</span><span class="p">(</span><span class="n">to</span> <span class="nv">request</span><span class="p">:</span> <span class="kt">Request</span><span class="p">,</span> <span class="n">chainingTo</span> <span class="nv">next</span><span class="p">:</span> <span class="kt">Responder</span><span class="p">)</span> <span class="k">throws</span> <span class="o">-&gt;</span> <span class="kt">Response</span> <span class="p">{</span>
+        <span class="nf">print</span><span class="p">(</span><span class="s">"1"</span><span class="p">)</span>
+        <span class="k">guard</span> <span class="n">request</span><span class="o">.</span><span class="n">uri</span><span class="o">.</span><span class="n">scheme</span> <span class="o">!=</span> <span class="s">"https"</span> <span class="k">else</span> <span class="p">{</span> <span class="c1">// 1</span>
+            <span class="k">let</span> <span class="nv">response</span> <span class="o">=</span> <span class="k">try</span> <span class="n">next</span><span class="o">.</span><span class="nf">respond</span><span class="p">(</span><span class="nv">to</span><span class="p">:</span> <span class="n">request</span><span class="p">)</span> <span class="c1">// 2</span>
+            <span class="nf">print</span><span class="p">(</span><span class="s">"7"</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">response</span> <span class="c1">// 3</span>
+        <span class="p">}</span>
+
+        <span class="k">let</span> <span class="nv">uri</span> <span class="o">=</span> <span class="n">uriWithSecureScheme</span>
+
+        <span class="nf">print</span><span class="p">(</span><span class="s">"alternate"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kt">Response</span><span class="p">(</span><span class="nv">redirect</span><span class="p">:</span> <span class="n">uri</span><span class="o">.</span><span class="n">description</span><span class="p">)</span> <span class="c1">// 4</span>
+    <span class="p">}</span>
+
+<span class="p">}</span>
+</code></pre>
+<p><em>RedirectMiddleware.</em></p>
+
+<p>The only purpose of this middleware is to check if the current request is a secure one (1). If it&rsquo;s not, we create and return (4) a new response with the request&rsquo;s <code>URI</code>, modified to have and <code>https</code> scheme. If it is already secure, we pass it to the next responder (2), and we are done - we return whatever that returns us (3). Since we want <em>all</em> requests to be secure, there&rsquo;s no need to let the request pass through all other middleware, thus its position at index <code>0</code>.</p>
+
+<p>Our next middleware, the <code>HeadersMiddleware</code>:</p>
+<pre class="codehilite swift"><code><span class="kd">struct</span> <span class="kt">HeadersMiddleware</span><span class="p">:</span> <span class="kt">Middleware</span> <span class="p">{</span>
+
+    <span class="kd">func</span> <span class="nf">respond</span><span class="p">(</span><span class="n">to</span> <span class="nv">request</span><span class="p">:</span> <span class="kt">Request</span><span class="p">,</span> <span class="n">chainingTo</span> <span class="nv">next</span><span class="p">:</span> <span class="kt">Responder</span><span class="p">)</span> <span class="k">throws</span> <span class="o">-&gt;</span> <span class="kt">Response</span> <span class="p">{</span>
+        <span class="nf">print</span><span class="p">(</span><span class="s">"2"</span><span class="p">)</span>
+        <span class="k">let</span> <span class="nv">response</span> <span class="o">=</span> <span class="k">try</span> <span class="n">next</span><span class="o">.</span><span class="nf">respond</span><span class="p">(</span><span class="nv">to</span><span class="p">:</span> <span class="n">request</span><span class="p">)</span> <span class="c1">// 1</span>
+        <span class="nf">print</span><span class="p">(</span><span class="s">"6"</span><span class="p">)</span>
+
+        <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s">"Cache-Control"</span><span class="p">]</span> <span class="o">=</span> <span class="s">"public, max-age=86400"</span> <span class="c1">// 2</span>
+
+        <span class="c1">// Disable the embedding of the site in an external one.</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s">"Content-Security-Policy"</span><span class="p">]</span> <span class="o">=</span> <span class="s">"frame-ancestors 'none'"</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s">"X-Frame-Options"</span><span class="p">]</span> <span class="o">=</span> <span class="s">"DENY"</span>
+
+        <span class="k">return</span> <span class="n">response</span> <span class="c1">// 3</span>
+    <span class="p">}</span>
+
+<span class="p">}</span>
+</code></pre>
+<p><em>HeadersMiddleware.</em></p>
+
+<p>This one passes the request directly to the next responder (1), and only after that returns a response, we set some headers on it (2), and return it (3).</p>
+
+<p>Next on the stack, and next responder, the <code>GzipMiddleware</code>:</p>
+<pre class="codehilite swift"><code><span class="kd">struct</span> <span class="kt">GzipMiddleware</span><span class="p">:</span> <span class="kt">Middleware</span> <span class="p">{</span>
+
+    <span class="kd">func</span> <span class="nf">respond</span><span class="p">(</span><span class="n">to</span> <span class="nv">request</span><span class="p">:</span> <span class="kt">Request</span><span class="p">,</span> <span class="n">chainingTo</span> <span class="nv">next</span><span class="p">:</span> <span class="kt">Responder</span><span class="p">)</span> <span class="k">throws</span> <span class="o">-&gt;</span> <span class="kt">Response</span> <span class="p">{</span>
+        <span class="nf">print</span><span class="p">(</span><span class="s">"3"</span><span class="p">)</span>
+        <span class="k">let</span> <span class="nv">response</span> <span class="o">=</span> <span class="k">try</span> <span class="n">next</span><span class="o">.</span><span class="nf">respond</span><span class="p">(</span><span class="nv">to</span><span class="p">:</span> <span class="n">request</span><span class="p">)</span> <span class="c1">// 1</span>
+        <span class="nf">print</span><span class="p">(</span><span class="s">"5"</span><span class="p">)</span>
+
+        <span class="n">response</span><span class="o">.</span><span class="n">body</span> <span class="o">=</span> <span class="n">gzippedBody</span> <span class="c1">// 2</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s">"Content-Encoding"</span><span class="p">]</span> <span class="o">=</span> <span class="s">"gzip"</span> <span class="c1">// 3</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">headers</span><span class="p">[</span><span class="s">"Content-Length"</span><span class="p">]</span> <span class="o">=</span> <span class="n">gzippedBody</span><span class="o">.</span><span class="n">length</span>
+
+        <span class="k">return</span> <span class="n">response</span> <span class="c1">// 4</span>
+    <span class="p">}</span>
+
+<span class="p">}</span>
+</code></pre>
+<p><em>GZipMiddleware.</em></p>
+
+<p>Here we also pass the response directly to the next responder (1), then add a couple of headers as well (3), but we also change the body (2) before returning (4) it.</p>
+
+<p>How are middleware handled internally? Basically, just like we use them ourselves - <code>Droplet</code> conforms to the <code>Responder</code> protocol, which has just one method:</p>
+<pre class="codehilite swift"><code><span class="kd">func</span> <span class="nf">respond</span><span class="p">(</span><span class="n">to</span> <span class="nv">request</span><span class="p">:</span> <span class="kt">Request</span><span class="p">)</span> <span class="k">throws</span> <span class="o">-&gt;</span> <span class="kt">Response</span>
+</code></pre>
+<p><em>The Droplet&rsquo;s respond method.</em></p>
+
+<p>Compared to the <code>Middleware</code> protocol, this one can not be called by chaining it to anything else; it chains all of the middleware in its implementation, though:</p>
+<pre class="codehilite swift"><code><span class="kd">extension</span> <span class="kt">Droplet</span><span class="p">:</span> <span class="kt">Responder</span> <span class="p">{</span>
+
+    <span class="kd">public</span> <span class="kd">func</span> <span class="nf">respond</span><span class="p">(</span><span class="n">to</span> <span class="nv">request</span><span class="p">:</span> <span class="kt">Request</span><span class="p">)</span> <span class="k">throws</span> <span class="o">-&gt;</span> <span class="kt">Response</span> <span class="p">{</span>
+
+        <span class="p">[</span><span class="o">...</span><span class="p">]</span>
+
+        <span class="nf">print</span><span class="p">(</span><span class="s">"0"</span><span class="p">)</span>
+      <span class="k">let</span> <span class="nv">mainResponder</span> <span class="o">=</span> <span class="n">middleware</span><span class="o">.</span><span class="nf">chain</span><span class="p">(</span><span class="nv">to</span><span class="p">:</span> <span class="n">routerResponder</span><span class="p">)</span> <span class="c1">// 1</span>
+        <span class="k">var</span> <span class="nv">response</span><span class="p">:</span> <span class="kt">Response</span>
+
+        <span class="k">do</span> <span class="p">{</span>
+            <span class="n">response</span> <span class="o">=</span> <span class="k">try</span> <span class="n">mainResponder</span><span class="o">.</span><span class="nf">respond</span><span class="p">(</span><span class="nv">to</span><span class="p">:</span> <span class="n">request</span><span class="p">)</span> <span class="c1">// 2</span>
+        <span class="p">}</span>
+        <span class="k">catch</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="kt">Response</span><span class="p">(</span><span class="nv">status</span><span class="p">:</span> <span class="o">.</span><span class="n">internalServerError</span><span class="p">,</span> <span class="nv">headers</span><span class="p">:</span> <span class="p">[:],</span> <span class="nv">body</span><span class="p">:</span> <span class="s">"Error message"</span><span class="o">.</span><span class="n">bytes</span><span class="p">)</span> <span class="c1">// 3</span>
+        <span class="p">}</span>
+
+        <span class="nf">print</span><span class="p">(</span><span class="s">"10"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">response</span> <span class="c1">// 4</span>
+    <span class="p">}</span>
+
+<span class="p">}</span>
+</code></pre>
+<p><em>The Droplet&rsquo;s respond method implementation.</em></p>
+
+<p>Here we can see that a responder is created (1) by chaining all middlewares (not calling them, yet), and it&rsquo;s used to create a response out of the request (2), that will be returned (4) if everything goes OK. If that fails, a new response is created and returned (3), which will contain an error message and a status code. How are the middleware chained (1), and called? With an extension of <code>Collection</code> and a <code>Responder</code> subclass, whose sole purpose is to hold and call a closure:</p>
+<pre class="codehilite swift"><code><span class="kd">extension</span> <span class="kt">Request</span> <span class="p">{</span>
+
+    <span class="kd">public</span> <span class="kd">struct</span> <span class="kt">Handler</span><span class="p">:</span> <span class="kt">Responder</span> <span class="p">{</span>
+        <span class="kd">public</span> <span class="kd">typealias</span> <span class="kt">Closure</span> <span class="o">=</span> <span class="p">(</span><span class="kt">Request</span><span class="p">)</span> <span class="k">throws</span> <span class="o">-&gt;</span> <span class="kt">Response</span>
+
+        <span class="kd">private</span> <span class="k">let</span> <span class="nv">closure</span><span class="p">:</span> <span class="kt">Closure</span>
+
+        <span class="kd">public</span> <span class="nf">init</span><span class="p">(</span><span class="n">_</span> <span class="nv">closure</span><span class="p">:</span> <span class="kd">@escaping</span> <span class="kt">Closure</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">self</span><span class="o">.</span><span class="n">closure</span> <span class="o">=</span> <span class="n">closure</span> <span class="c1">// 1</span>
+        <span class="p">}</span>
+
+        <span class="kd">public</span> <span class="kd">func</span> <span class="nf">respond</span><span class="p">(</span><span class="n">to</span> <span class="nv">request</span><span class="p">:</span> <span class="kt">Request</span><span class="p">)</span> <span class="k">throws</span> <span class="o">-&gt;</span> <span class="kt">Response</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="k">try</span> <span class="nf">closure</span><span class="p">(</span><span class="n">request</span><span class="p">)</span> <span class="c1">// 2</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+<span class="p">}</span>
+
+<span class="kd">extension</span> <span class="kt">Collection</span> <span class="k">where</span> <span class="kt">Iterator</span><span class="o">.</span><span class="kt">Element</span> <span class="o">==</span> <span class="kt">Middleware</span> <span class="p">{</span>
+
+    <span class="kd">func</span> <span class="nf">chain</span><span class="p">(</span><span class="n">to</span> <span class="nv">responder</span><span class="p">:</span> <span class="kt">Responder</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Responder</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="nf">reversed</span><span class="p">()</span><span class="o">.</span><span class="nf">reduce</span><span class="p">(</span><span class="n">responder</span><span class="p">)</span> <span class="p">{</span> <span class="n">nextResponder</span><span class="p">,</span> <span class="n">nextMiddleware</span> <span class="k">in</span> <span class="c1">// 3</span>
+            <span class="k">return</span> <span class="kt">Request</span><span class="o">.</span><span class="kt">Handler</span> <span class="p">{</span> <span class="n">request</span> <span class="k">in</span>
+                <span class="k">return</span> <span class="k">try</span> <span class="n">nextMiddleware</span><span class="o">.</span><span class="nf">respond</span><span class="p">(</span><span class="nv">to</span><span class="p">:</span> <span class="n">request</span><span class="p">,</span> <span class="nv">chainingTo</span><span class="p">:</span> <span class="n">nextResponder</span><span class="p">)</span> <span class="c1">// 4</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+<span class="p">}</span>
+</code></pre>
+<p><em>Extending Request and Collection.</em></p>
+
+<p>The <code>chain</code> method reverses all middleware (3) and at each step, it creates and returns a new <code>Handler</code>, that calls the <code>Middleware</code>&lsquo;s protocol method we talked about earlier, by passing the request and the current responder to it. This way, if we remember our (shortened, for an easier explanation) middleware stack, <code>[Redirect, Headers, Gzip]</code> will go through the chain method like this:</p>
+<pre class="codehilite plaintext"><code>reverse -&gt;
+[Gzip, Headers, Redirect] -&gt;
+create and return a Handler, that in its closure calls Gzip's respond(to: request, chainingTo: mainResponder) -&gt;
+create and return a Handler, that in its closure calls Headers' respond(to: request, chainingTo: gzipResponder) -&gt;
+create and return a Handler, that in its closure calls Redirect's respond(to: request, chainingTo: headersResponder) -&gt;
+return the Redirect Handler
+</code></pre>
+<p><em>Chaining the middleware&rsquo;s closures.</em></p>
+
+<p><code>Droplet</code>&rsquo;s <code>respond</code> method is the place where the returned <code>Handler</code>&rsquo;s <code>closure</code> is called (2), which will call the next, and so on. The last one that will be called is the <code>handler</code> closure passed in our <code>get</code> method, and is the first one that chains the responses/errors back:</p>
+<pre class="codehilite swift"><code><span class="n">drop</span><span class="o">.</span><span class="nf">get</span><span class="p">(</span><span class="s">"/test"</span><span class="p">,</span> <span class="nv">handler</span><span class="p">:</span> <span class="p">{</span> <span class="n">request</span> <span class="k">in</span>
+    <span class="nf">print</span><span class="p">(</span><span class="s">"4"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="k">try</span> <span class="kt">JSON</span><span class="p">(</span><span class="nv">node</span><span class="p">:</span> <span class="s">"This is a test page."</span><span class="p">)</span>
+<span class="p">})</span>
+</code></pre>
+<p><em>get&rsquo;s handler.</em></p>
+
+<p>Finally, let&rsquo;s put everything together, and follow the chain. A secure requets gets sent like this:</p>
+<pre class="codehilite plaintext"><code>create the main responder ("0") -&gt;
+RequestMiddleware ("1") -&gt;
+Other, internal middleware -&gt;
+HeadersMiddleware ("2") -&gt;
+GZipMiddleware ("3") -&gt;
+MiscMiddleware1 -&gt;
+MiscMiddleware2
+</code></pre>
+<p><em>Secure request chain.</em></p>
+
+<p>Then, the response is sent like this:</p>
+<pre class="codehilite plaintext"><code>get's handler ("4") -&gt;
+GZipMiddleware ("5") -&gt;
+HeadersMiddleware ("6") -&gt;
+Other, internal middleware -&gt;
+RequestMiddleware ("7") -&gt;
+response is sent to client ("10")
+</code></pre>
+<p><em>Response chain.</em></p>
+
+<p>A non-secure request has a slightly longer path to follow:</p>
+<pre class="codehilite plaintext"><code>get("/test") -&gt;
+RequestMiddleware ("1") -&gt;
+RequestMiddleware ("alternate") -&gt;
+start over -&gt;
+RequestMiddleware ("1") -&gt;
+[continue with the rest of the secure path]
+</code></pre>
+<p><em>Non-secure request chain.</em></p>
+
+<p>As you can see, the main advantages of middleware are that we can modularize code, by breaking it down into smaller, specialized classes. Due to the fact that each serves a single, usually small, purpose, they can be reasoned with much easier, are more expressive, and easier to test/change/remove. None of them know about each other, they all act on the request/response independently, without caring what happens down/up the chain.</p>
+
+<p>The throwing chain follows the exact same path, and, at its core, is very straightforward: if anything throws an error and it is not handled, it will be passed back the request/response chain until a handler is found, or, it will reach the internal catch block (3 in the <code>extension Droplet: Responder</code> snippet), where a <code>Response</code> is created with a generic error message.</p>
+
+<p>Let us see how one could handle errors. First, the most straightforward, in-place handling:</p>
+<pre class="codehilite swift"><code><span class="kd">extension</span> <span class="kt">String</span><span class="p">:</span> <span class="kt">Error</span> <span class="p">{</span> <span class="p">}</span> <span class="c1">// 1</span>
+
+<span class="n">drop</span><span class="o">.</span><span class="nf">get</span><span class="p">(</span><span class="s">"/handle"</span><span class="p">,</span> <span class="nv">handler</span><span class="p">:</span> <span class="p">{</span> <span class="n">request</span> <span class="k">in</span>
+    <span class="k">do</span> <span class="p">{</span>
+        <span class="k">let</span> <span class="nv">answer</span> <span class="o">=</span> <span class="k">try</span> <span class="nf">findAnswer</span><span class="p">(</span><span class="nv">in</span><span class="p">:</span> <span class="n">request</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kt">JSON</span><span class="p">(</span><span class="n">answer</span><span class="p">)</span> <span class="c1">// 2</span>
+    <span class="p">}</span>
+    <span class="k">catch</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="kt">JSON</span><span class="p">(</span><span class="s">"Answer couldn't be computed."</span><span class="p">)</span> <span class="c1">// 3</span>
+    <span class="p">}</span>
+<span class="p">})</span>
+
+<span class="n">drop</span><span class="o">.</span><span class="nf">get</span><span class="p">(</span><span class="s">"/pass-along"</span><span class="p">,</span> <span class="nv">handler</span><span class="p">:</span> <span class="p">{</span> <span class="n">request</span> <span class="k">in</span>
+    <span class="k">let</span> <span class="nv">answer</span> <span class="o">=</span> <span class="k">try</span> <span class="nf">findAnswer</span><span class="p">(</span><span class="nv">in</span><span class="p">:</span> <span class="n">request</span><span class="p">)</span> <span class="c1">// 4</span>
+    <span class="k">return</span> <span class="kt">JSON</span><span class="p">(</span><span class="n">answer</span><span class="p">)</span> <span class="c1">// 5</span>
+<span class="p">})</span>
+
+<span class="kd">func</span> <span class="nf">findAnswer</span><span class="p">(</span><span class="k">for</span> <span class="nv">request</span><span class="p">:</span> <span class="kt">Request</span><span class="p">)</span> <span class="k">throws</span> <span class="o">-&gt;</span> <span class="kt">String</span> <span class="p">{</span>
+    <span class="k">guard</span> <span class="k">let</span> <span class="nv">answer</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="nf">extract</span><span class="p">(</span><span class="s">"answer"</span><span class="p">)</span> <span class="k">as?</span> <span class="kt">String</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="s">"Answer parameter is not present."</span> <span class="c1">// 6</span>
+    <span class="p">}</span>
+
+    <span class="k">guard</span> <span class="n">computingFinishedFast</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="s">"Computing took too long to finish."</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">answer</span>
+<span class="p">}</span>
+</code></pre>
+<p><em>Throwing strings.</em></p>
+
+<p>By conforming <code>String</code> to <code>Error</code> (1), we can throw strings (6), just as if we&rsquo;d have created an enum with associated values, conforming to <code>Error</code>.</p>
+
+<p>In the case of the <code>handle</code> endpoint, if everything goes well in <code>findAnswer</code>, we return a <code>JSON</code> created out of our <code>answer</code> (2); if something goes wrong, we catch the error, and return a <code>JSON</code> created out of our error (3).</p>
+
+<p>In the case of the <code>pass-along</code> endpoint, if everything goes well, the same scenario applies (5); but if an error is thrown, since we aren&rsquo;t handling it here, it will be passed on the callback chain (4), as previously mentioned.</p>
+
+<p>We can already see that if we add other endpoints that make use of the <code>findAnswer</code> method, we&rsquo;ll have to treat the error again and again.</p>
+
+<p>Another approach, recommended by Vapor&rsquo;s documentation, and a great idea per se, is to create an error handling middleware, that handles all errors. Let&rsquo;s start by creating an <code>AppError</code> entity, and change our <code>findAnswer</code> method:</p>
+<pre class="codehilite swift"><code><span class="kd">enum</span> <span class="kt">AppError</span><span class="p">:</span> <span class="kt">Error</span> <span class="p">{</span>
+    <span class="k">case</span> <span class="nf">argumentNotPresent</span><span class="p">(</span><span class="nv">name</span><span class="p">:</span> <span class="kt">String</span><span class="p">)</span>
+    <span class="k">case</span> <span class="n">computingTimedOut</span>
+<span class="p">}</span>
+
+<span class="n">drop</span><span class="o">.</span><span class="nf">get</span><span class="p">(</span><span class="s">"/handle"</span><span class="p">,</span> <span class="nv">handler</span><span class="p">:</span> <span class="p">{</span> <span class="n">request</span> <span class="k">in</span>
+    <span class="k">do</span> <span class="p">{</span>
+        <span class="k">let</span> <span class="nv">answer</span> <span class="o">=</span> <span class="k">try</span> <span class="nf">findAnswer</span><span class="p">(</span><span class="nv">in</span><span class="p">:</span> <span class="n">request</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kt">JSON</span><span class="p">(</span><span class="n">answer</span><span class="p">)</span> <span class="c1">// 1</span>
+    <span class="p">}</span>
+    <span class="k">catch</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="kt">JSON</span><span class="p">(</span><span class="s">"Answer couldn't be computed."</span><span class="p">)</span> <span class="c1">// 2</span>
+    <span class="p">}</span>
+<span class="p">})</span>
+
+<span class="n">drop</span><span class="o">.</span><span class="nf">get</span><span class="p">(</span><span class="s">"/pass-along"</span><span class="p">,</span> <span class="nv">handler</span><span class="p">:</span> <span class="p">{</span> <span class="n">request</span> <span class="k">in</span>
+    <span class="k">let</span> <span class="nv">answer</span> <span class="o">=</span> <span class="k">try</span> <span class="nf">findAnswer</span><span class="p">(</span><span class="nv">in</span><span class="p">:</span> <span class="n">request</span><span class="p">)</span> <span class="c1">// 3</span>
+    <span class="k">return</span> <span class="kt">JSON</span><span class="p">(</span><span class="n">answer</span><span class="p">)</span> <span class="c1">// 4</span>
+<span class="p">})</span>
+
+<span class="kd">func</span> <span class="nf">findAnswer</span><span class="p">(</span><span class="k">for</span> <span class="nv">request</span><span class="p">:</span> <span class="kt">Request</span><span class="p">)</span> <span class="k">throws</span> <span class="o">-&gt;</span> <span class="kt">String</span> <span class="p">{</span>
+    <span class="k">guard</span> <span class="k">let</span> <span class="nv">answer</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="nf">extract</span><span class="p">(</span><span class="s">"answer"</span><span class="p">)</span> <span class="k">as?</span> <span class="kt">String</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="kt">AppError</span><span class="o">.</span><span class="nf">argumentNotPresent</span><span class="p">(</span><span class="nv">name</span><span class="p">:</span> <span class="s">"answer"</span><span class="p">)</span> <span class="c1">// 5</span>
+    <span class="p">}</span>
+
+    <span class="k">guard</span> <span class="n">computingFinishedFast</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="kt">AppError</span><span class="o">.</span><span class="n">computingTimedOut</span> <span class="c1">// 6</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">answer</span>
+<span class="p">}</span>
+</code></pre>
+<p><em>Throwing custom errors.</em></p>
+
+<p>We can still handle errors in-place (1, 2), but since we will be adding a middleware to treat errors, passing them along (3, 4) would be the go-to choice. Our <code>findAnswer</code> method now throws an <code>AppError</code> (5) with an associated value for the expected parameter and is also throwing an error for the timeout (6).</p>
+
+<p>As we already know, we only need to implement one method, so let&rsquo;s see how we can do that:</p>
+<pre class="codehilite swift"><code><span class="kd">struct</span> <span class="kt">ErrorHandlingMiddleware</span><span class="p">:</span> <span class="kt">Middleware</span> <span class="p">{</span>
+
+    <span class="kd">func</span> <span class="nf">respond</span><span class="p">(</span><span class="n">to</span> <span class="nv">request</span><span class="p">:</span> <span class="kt">Request</span><span class="p">,</span> <span class="n">chainingTo</span> <span class="nv">next</span><span class="p">:</span> <span class="kt">Responder</span><span class="p">)</span> <span class="k">throws</span> <span class="o">-&gt;</span> <span class="kt">Response</span> <span class="p">{</span>
+        <span class="k">do</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="k">try</span> <span class="n">next</span><span class="o">.</span><span class="nf">respond</span><span class="p">(</span><span class="nv">to</span><span class="p">:</span> <span class="n">request</span><span class="p">)</span> <span class="c1">// 1</span>
+        <span class="p">}</span>
+          <span class="k">catch</span> <span class="kt">AppError</span><span class="o">.</span><span class="nf">argumentNotPresent</span><span class="p">(</span><span class="k">let</span> <span class="nv">name</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// 2</span>
+            <span class="k">throw</span> <span class="kt">Abort</span><span class="o">.</span><span class="nf">custom</span><span class="p">(</span> <span class="c1">// 3</span>
+                <span class="nv">status</span><span class="p">:</span> <span class="o">.</span><span class="n">badRequest</span><span class="p">,</span>
+                <span class="nv">message</span><span class="p">:</span> <span class="s">"Argument </span><span class="se">\(</span><span class="n">name</span><span class="se">)</span><span class="s"> was not found."</span> <span class="c1">// 4</span>
+            <span class="p">)</span>
+        <span class="p">}</span>
+          <span class="k">catch</span> <span class="kt">AppError</span><span class="o">.</span><span class="n">computingTimedOut</span> <span class="p">{</span> <span class="c1">// 5</span>
+              <span class="k">throw</span> <span class="kt">Abort</span><span class="o">.</span><span class="nf">custom</span><span class="p">(</span>
+                <span class="nv">status</span><span class="p">:</span> <span class="o">.</span><span class="n">requestTimeout</span><span class="p">,</span> <span class="c1">// 6</span>
+                <span class="nv">message</span><span class="p">:</span> <span class="s">"Computing an answer has timed out."</span>
+            <span class="p">)</span>
+          <span class="p">}</span>
+          <span class="k">catch</span> <span class="p">{</span> <span class="c1">// 7</span>
+                <span class="k">return</span> <span class="kt">Response</span><span class="p">(</span> <span class="c1">// 8</span>
+                    <span class="nv">status</span><span class="p">:</span> <span class="o">.</span><span class="n">serverError</span><span class="p">,</span>
+                    <span class="nv">message</span><span class="p">:</span> <span class="s">"Something unexpected happened."</span>
+                <span class="p">)</span>
+          <span class="p">}</span>
+    <span class="p">}</span>
+
+<span class="p">}</span>
+</code></pre>
+<p><em>ErrorHandlingMiddleware.</em></p>
+
+<p>The only thing we need to do is pass the request to the next responder inside a <code>do-catch</code> block. If everything goes well (1), the request will have reached our <code>get</code> handlers, the response has reached back to us (1), and we can return it further along the chain (1).</p>
+
+<p>If something went wrong in our <code>findAnswer</code> method, we can do the catching ourselves and create and throw specific <code>Abort</code> errors (3) - an enum offered by Vapor, or create and return a <code>Response</code> (8).</p>
+
+<p>Catching an error with an associated value (2) gives us the flexibility of extracting the parameter that was not present (4), opening up the possibility of throwing the same error, but for a different parameter:</p>
+<pre class="codehilite swift"><code><span class="kd">func</span> <span class="nf">findMeaningOfLife</span><span class="p">(</span><span class="k">for</span> <span class="nv">request</span><span class="p">:</span> <span class="kt">Request</span><span class="p">)</span> <span class="k">throws</span> <span class="o">-&gt;</span> <span class="kt">Int</span> <span class="p">{</span>
+    <span class="k">guard</span> <span class="k">let</span> <span class="nv">answer</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="nf">extract</span><span class="p">(</span><span class="s">"meaningOfLife"</span><span class="p">)</span> <span class="k">as?</span> <span class="kt">Int</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="k">throw</span> <span class="kt">AppError</span><span class="o">.</span><span class="nf">argumentNotPresent</span><span class="p">(</span><span class="nv">name</span><span class="p">:</span> <span class="s">"meaningOfLife"</span><span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="mi">42</span>
+<span class="p">}</span>
+</code></pre>
+<p><em>Throwing errors with associated values.</em></p>
+
+<p>We can now treat the timeout error separately (5), with an appropriate status (6), and we can also have a fallback <code>catch</code> (7) for everything else, where we simply return a <code>serverError</code>, with a generic message.</p>
+
+<p>Finally, we just need to add our new middleware to the droplet, and we&rsquo;re good to go:</p>
+<pre class="codehilite swift"><code><span class="c1">// [...]</span>
+<span class="n">drop</span><span class="o">.</span><span class="n">middleware</span><span class="o">.</span><span class="nf">append</span><span class="p">(</span><span class="kt">ErrorHandlingMiddleware</span><span class="p">())</span>
+<span class="c1">// [...]</span>
+</code></pre>
+<p><em>Adding the error handling middleware.</em></p>
+
+<p>I&rsquo;d like to mention one more neat feature of middleware: per-server configuration. Let&rsquo;s say we want our <code>ErrorHandlingMiddleware</code> to only run on production; locally we want our app to just crash, for some reason. Instead of appending the middleware like we saw so far, droplets offer <a href="https://vapor.github.io/documentation/guide/config.html">configuration files</a>, and we can make use of those.</p>
+
+<p>First, let&rsquo;s add the middleware as a configurable, instead of appending it as a middleware:</p>
+<pre class="codehilite swift"><code><span class="c1">// [...]</span>
+<span class="c1">// drop.middleware.append(ErrorHandlingMiddleware()) -&gt; replaced with:</span>
+<span class="n">drop</span><span class="o">.</span><span class="nf">addConfigurable</span><span class="p">(</span><span class="nv">middleware</span><span class="p">:</span> <span class="kt">ErrorHandlingMiddleware</span><span class="p">(),</span> <span class="nv">name</span><span class="p">:</span> <span class="s">"error-handling"</span><span class="p">)</span>
+<span class="c1">// [...]</span>
+</code></pre>
+<p><em>Adding a configurable middleware.</em></p>
+
+<p>Then let&rsquo;s add the appropriate keys in our <code>Config/production/droplet.json</code> and <code>Config/staging/droplet.json</code> files:</p>
+<pre class="codehilite json"><code><span class="err">//</span><span class="w"> </span><span class="err">production/droplet.json</span><span class="w">
+</span><span class="p">{</span><span class="w">
+    </span><span class="err">...</span><span class="w">
+    </span><span class="s2">"middleware"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="s2">"server"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+            </span><span class="err">...</span><span class="w">
+            </span><span class="s2">"error-handling"</span><span class="p">,</span><span class="w"> </span><span class="err">//</span><span class="w"> </span><span class="mi">1</span><span class="w">
+            </span><span class="err">...</span><span class="w">
+        </span><span class="p">],</span><span class="w">
+        </span><span class="s2">"client"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+            </span><span class="err">...</span><span class="w">
+        </span><span class="p">]</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="err">...</span><span class="w">
+</span><span class="p">}</span><span class="w">
+
+</span><span class="err">//</span><span class="w"> </span><span class="err">staging/droplet.json</span><span class="w">
+</span><span class="p">{</span><span class="w">
+    </span><span class="err">...</span><span class="w">
+    </span><span class="s2">"middleware"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="s2">"server"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+            </span><span class="err">...</span><span class="w"> </span><span class="err">//</span><span class="w"> </span><span class="mi">2</span><span class="w">
+        </span><span class="p">],</span><span class="w">
+        </span><span class="s2">"client"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+            </span><span class="err">...</span><span class="w">
+        </span><span class="p">]</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="err">...</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></code></pre>
+<p><em>droplet.json</em></p>
+
+<p>Now, the <code>ErrorHandlingMiddleware</code> will be added to the production server&rsquo;s middleware (1) on app launch, but not on staging (2). A middleware can be added to both server and client, and to any <code>Config/server-type/droplet.json</code> file; also the ordering of the array will be respected.
+<br>
+As we&rsquo;re reaching the end of the article, we can see that Swift is a pretty viable solution for setting up a server. Protocols let us define a <code>Middleware</code> entity to be easily used to modify our requests/responses, and extensions gave us the versatility of adding their handlers to a chained stack. We also made use of extensions to open up the possibility of <code>throwing</code> a string, for basic error handling, but also for simple things, like separating the <code>Request.Handler</code> hierarchy out of the main struct, for a better project structure.</p>
+
+<p>By using Swift both on the server and on the client, one could also share models, functionality and helpers/utilities, avoid duplication and by looking at the server and client as a whole, everything would be easier to reason with.</p>
+
+<p>As for Vapor itself, as the framework of choice? It&rsquo;s not the best, nor the worst, according to <a href="https://medium.com/@rymcol/benchmarks-for-the-top-server-side-swift-frameworks-vs-node-js-24460cfe0beb">this</a> article (9 months old, things might have changed), but it offers a really similar mindset to Express.js and Sinatra (those were my previous two choices for my own <a href="https://rolandleth.com">blog</a>), and it also fit my needs pretty well (a blog with not too many requests, that didn&rsquo;t require any APIs, either).</p>
+
+          </article>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <footer id="footer">
+        <div class="inner">
+          <section>
+            <h2>Follow</h2>
+            <ul class="icons">
+              <li><a href="#" class="icon style2 fa-twitter"><span class="label">Twitter</span></a></li>
+              <li><a href="#" class="icon style2 fa-facebook"><span class="label">Facebook</span></a></li>
+              <li><a href="#" class="icon style2 fa-instagram"><span class="label">Instagram</span></a></li>
+              <li><a href="#" class="icon style2 fa-dribbble"><span class="label">Dribbble</span></a></li>
+              <li><a href="#" class="icon style2 fa-github"><span class="label">GitHub</span></a></li>
+              <li><a href="#" class="icon style2 fa-500px"><span class="label">500px</span></a></li>
+              <li><a href="#" class="icon style2 fa-phone"><span class="label">Phone</span></a></li>
+              <li><a href="mailto:info@swissmobidevs.org" class="icon style2 fa-envelope-o"><span class="label">Email</span></a></li>
+            </ul>
+          </section>
+          <ul class="copyright">
+            <li>&copy; <a href="https://swissmobidevs.org" target="_blank">Swiss Mobile Developers Association</a>. All rights reserved</li>
+          </ul>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/javascripts/jquery.js"></script>
+    <script src="/javascripts/skel.js"></script>
+    <script src="/javascripts/util.js"></script>
+    <!--[if lte IE 8]><script src="/javascripts/respond.js"></script><![endif]-->
+    <script src="/javascripts/main.js"></script>
+    <script src="/javascripts/all.js"></script>
+
+  </body>
+</html>
