@@ -142,17 +142,17 @@ SourceKit supports editor functionality to work effectively with Swift such as c
 The following invocation will return the structure of the given source file.</p>
 <pre class="codehilite shell"><code><span class="gp">$ </span>sourcekitten structure --file Source/Result.swift
 </code></pre><pre class="codehilite json"><code><span class="p">{</span><span class="w">
-          </span><span class="s2">"key.offset"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">2869</span><span class="p">,</span><span class="w">
-          </span><span class="s2">"key.nameoffset"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">2873</span><span class="p">,</span><span class="w">
-          </span><span class="s2">"key.accessibility"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"source.lang.swift.accessibility.public"</span><span class="p">,</span><span class="w">
-          </span><span class="s2">"key.typename"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"String"</span><span class="p">,</span><span class="w">
-          </span><span class="s2">"key.length"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">23</span><span class="p">,</span><span class="w">
-          </span><span class="s2">"key.name"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"description"</span><span class="p">,</span><span class="w">
-          </span><span class="s2">"key.bodyoffset"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">2894</span><span class="p">,</span><span class="w">
-          </span><span class="s2">"key.kind"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"source.lang.swift.decl.var.instance"</span><span class="p">,</span><span class="w">
-          </span><span class="s2">"key.namelength"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">11</span><span class="p">,</span><span class="w">
-          </span><span class="s2">"key.bodylength"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">141</span><span class="w">
-        </span><span class="p">},</span><span class="w">
+  </span><span class="s2">"key.offset"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">2869</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"key.nameoffset"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">2873</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"key.accessibility"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"source.lang.swift.accessibility.public"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"key.typename"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"String"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"key.length"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">23</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"key.name"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"description"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"key.bodyoffset"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">2894</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"key.kind"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"source.lang.swift.decl.var.instance"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"key.namelength"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">11</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"key.bodylength"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">141</span><span class="w">
+</span><span class="p">},</span><span class="w">
 </span></code></pre>
 <p>Meanwhile, in order to extract documentation SourceKitten will invoke <code>xcodebuild</code> under the hood, so you should run it in a folder containing an Xcode project.
 If you&rsquo;re just experimenting it can be helpful to create a small sample project rather than waiting for a full build of your production app.</p>
@@ -164,38 +164,38 @@ Notice how the basic attributes are shared, but plenty of additional keys have b
 <p>Another key benefit of compiling as part of generating documentation is receiving accurate type information or identifiers for entities like <em>Unified Symbol Resolution</em> (USR) (See the <a href="https://raw.githubusercontent.com/apple/swift/7e68e02b4eaa1cf44037a383129cbef60ea55d67/docs/Lexicon.rst">Swift lexicon</a>).</p>
 <pre class="codehilite shell"><code><span class="gp">$ </span>sourcekitten doc
 </code></pre><pre class="codehilite json"><code><span class="p">{</span><span class="w">
-            </span><span class="s2">"key.accessibility"</span><span class="p">:</span><span class="w"> </span><span class="s2">"source.lang.swift.accessibility.public"</span><span class="p">,</span><span class="w">
-            </span><span class="s2">"key.length"</span><span class="p">:</span><span class="w"> </span><span class="mi">23</span><span class="p">,</span><span class="w">
-            </span><span class="s2">"key.overrides"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
-              </span><span class="p">{</span><span class="w">
-                </span><span class="s2">"key.usr"</span><span class="p">:</span><span class="w"> </span><span class="s2">"s:vPs23CustomStringConvertible11descriptionSS"</span><span class="w">
-              </span><span class="p">}</span><span class="w">
-            </span><span class="p">],</span><span class="w">
-            </span><span class="s2">"key.doc.type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Other"</span><span class="p">,</span><span class="w">
-            </span><span class="s2">"key.parsed_scope.start"</span><span class="p">:</span><span class="w"> </span><span class="mi">79</span><span class="p">,</span><span class="w">
-            </span><span class="s2">"key.kind"</span><span class="p">:</span><span class="w"> </span><span class="s2">"source.lang.swift.decl.var.instance"</span><span class="p">,</span><span class="w">
-            </span><span class="s2">"key.doc.full_as_xml"</span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;Other file=</span><span class="se">\"</span><span class="s2">./Source/Result.swift</span><span class="se">\"</span><span class="s2"> line=</span><span class="se">\"</span><span class="s2">79</span><span class="se">\"</span><span class="s2"> column=</span><span class="se">\"</span><span class="s2">16</span><span class="se">\"</span><span class="s2">&gt;&lt;Name&gt;description&lt;/Name&gt;&lt;USR&gt;s:vO9Alamofire6Result11descriptionSS&lt;/USR&gt;&lt;Declaration&gt;public var description: String { get }&lt;/Declaration&gt;&lt;Abstract&gt;&lt;Para&gt;The textual representation used when written to an output stream, which includes whether the result was a success or failure.&lt;/Para&gt;&lt;/Abstract&gt;&lt;/Other&gt;"</span><span class="p">,</span><span class="w">
-            </span><span class="s2">"key.nameoffset"</span><span class="p">:</span><span class="w"> </span><span class="mi">2873</span><span class="p">,</span><span class="w">
-            </span><span class="s2">"key.typename"</span><span class="p">:</span><span class="w"> </span><span class="s2">"String"</span><span class="p">,</span><span class="w">
-            </span><span class="s2">"key.doc.column"</span><span class="p">:</span><span class="w"> </span><span class="mi">16</span><span class="p">,</span><span class="w">
-            </span><span class="s2">"key.doc.comment"</span><span class="p">:</span><span class="w"> </span><span class="s2">"The textual representation used when written to an output stream, which includes whether the result was a</span><span class="se">\n</span><span class="s2">success or failure."</span><span class="p">,</span><span class="w">
-            </span><span class="s2">"key.bodyoffset"</span><span class="p">:</span><span class="w"> </span><span class="mi">2894</span><span class="p">,</span><span class="w">
-            </span><span class="s2">"key.filepath"</span><span class="p">:</span><span class="w"> </span><span class="s2">"./Source/Result.swift"</span><span class="p">,</span><span class="w">
-            </span><span class="s2">"key.doc.file"</span><span class="p">:</span><span class="w"> </span><span class="s2">"./Source/Result.swift"</span><span class="p">,</span><span class="w">
-            </span><span class="s2">"key.annotated_decl"</span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;Declaration&gt;public var description: &lt;Type usr=</span><span class="se">\"</span><span class="s2">s:SS</span><span class="se">\"</span><span class="s2">&gt;String&lt;/Type&gt; { get }&lt;/Declaration&gt;"</span><span class="p">,</span><span class="w">
-            </span><span class="s2">"key.fully_annotated_decl"</span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;decl.var.instance&gt;&lt;syntaxtype.keyword&gt;public&lt;/syntaxtype.keyword&gt; &lt;syntaxtype.keyword&gt;var&lt;/syntaxtype.keyword&gt; &lt;decl.name&gt;description&lt;/decl.name&gt;: &lt;decl.var.type&gt;&lt;ref.struct usr=</span><span class="se">\"</span><span class="s2">s:SS</span><span class="se">\"</span><span class="s2">&gt;String&lt;/ref.struct&gt;&lt;/decl.var.type&gt; { &lt;syntaxtype.keyword&gt;get&lt;/syntaxtype.keyword&gt; }&lt;/decl.var.instance&gt;"</span><span class="p">,</span><span class="w">
-            </span><span class="s2">"key.doc.declaration"</span><span class="p">:</span><span class="w"> </span><span class="s2">"public var description: String { get }"</span><span class="p">,</span><span class="w">
-            </span><span class="s2">"key.typeusr"</span><span class="p">:</span><span class="w"> </span><span class="s2">"_TtSS"</span><span class="p">,</span><span class="w">
-            </span><span class="s2">"key.offset"</span><span class="p">:</span><span class="w"> </span><span class="mi">2869</span><span class="p">,</span><span class="w">
-            </span><span class="s2">"key.doc.line"</span><span class="p">:</span><span class="w"> </span><span class="mi">79</span><span class="p">,</span><span class="w">
-            </span><span class="s2">"key.doc.name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"description"</span><span class="p">,</span><span class="w">
-            </span><span class="s2">"key.name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"description"</span><span class="p">,</span><span class="w">
-            </span><span class="s2">"key.usr"</span><span class="p">:</span><span class="w"> </span><span class="s2">"s:vO9Alamofire6Result11descriptionSS"</span><span class="p">,</span><span class="w">
-            </span><span class="s2">"key.parsed_declaration"</span><span class="p">:</span><span class="w"> </span><span class="s2">"public var description: String"</span><span class="p">,</span><span class="w">
-            </span><span class="s2">"key.namelength"</span><span class="p">:</span><span class="w"> </span><span class="mi">11</span><span class="p">,</span><span class="w">
-            </span><span class="s2">"key.parsed_scope.end"</span><span class="p">:</span><span class="w"> </span><span class="mi">86</span><span class="p">,</span><span class="w">
-            </span><span class="s2">"key.bodylength"</span><span class="p">:</span><span class="w"> </span><span class="mi">141</span><span class="w">
-          </span><span class="p">}</span><span class="w">
+  </span><span class="s2">"key.accessibility"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"source.lang.swift.accessibility.public"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"key.length"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">23</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"key.overrides"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="s2">"key.usr"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"s:vPs23CustomStringConvertible11descriptionSS"</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">],</span><span class="w">
+  </span><span class="s2">"key.doc.type"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"Other"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"key.parsed_scope.start"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">79</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"key.kind"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"source.lang.swift.decl.var.instance"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"key.doc.full_as_xml"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;Other file=</span><span class="se">\"</span><span class="s2">./Source/Result.swift</span><span class="se">\"</span><span class="s2"> line=</span><span class="se">\"</span><span class="s2">79</span><span class="se">\"</span><span class="s2"> column=</span><span class="se">\"</span><span class="s2">16</span><span class="se">\"</span><span class="s2">&gt;&lt;Name&gt;description&lt;/Name&gt;&lt;USR&gt;s:vO9Alamofire6Result11descriptionSS&lt;/USR&gt;&lt;Declaration&gt;public var description: String { get }&lt;/Declaration&gt;&lt;Abstract&gt;&lt;Para&gt;The textual representation used when written to an output stream, which includes whether the result was a success or failure.&lt;/Para&gt;&lt;/Abstract&gt;&lt;/Other&gt;"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"key.nameoffset"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">2873</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"key.typename"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"String"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"key.doc.column"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">16</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"key.doc.comment"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"The textual representation used when written to an output stream, which includes whether the result was a</span><span class="se">\n</span><span class="s2">success or failure."</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"key.bodyoffset"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">2894</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"key.filepath"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"./Source/Result.swift"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"key.doc.file"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"./Source/Result.swift"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"key.annotated_decl"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;Declaration&gt;public var description: &lt;Type usr=</span><span class="se">\"</span><span class="s2">s:SS</span><span class="se">\"</span><span class="s2">&gt;String&lt;/Type&gt; { get }&lt;/Declaration&gt;"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"key.fully_annotated_decl"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;decl.var.instance&gt;&lt;syntaxtype.keyword&gt;public&lt;/syntaxtype.keyword&gt; &lt;syntaxtype.keyword&gt;var&lt;/syntaxtype.keyword&gt; &lt;decl.name&gt;description&lt;/decl.name&gt;: &lt;decl.var.type&gt;&lt;ref.struct usr=</span><span class="se">\"</span><span class="s2">s:SS</span><span class="se">\"</span><span class="s2">&gt;String&lt;/ref.struct&gt;&lt;/decl.var.type&gt; { &lt;syntaxtype.keyword&gt;get&lt;/syntaxtype.keyword&gt; }&lt;/decl.var.instance&gt;"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"key.doc.declaration"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"public var description: String { get }"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"key.typeusr"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"_TtSS"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"key.offset"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">2869</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"key.doc.line"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">79</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"key.doc.name"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"description"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"key.name"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"description"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"key.usr"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"s:vO9Alamofire6Result11descriptionSS"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"key.parsed_declaration"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"public var description: String"</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"key.namelength"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">11</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"key.parsed_scope.end"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">86</span><span class="p">,</span><span class="w">
+  </span><span class="s2">"key.bodylength"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="mi">141</span><span class="w">
+</span><span class="p">}</span><span class="w">
 </span></code></pre>
 <p>If you normally need to pass additional arguments to <code>xcodebuild</code> you can also use these with SourceKitten by adding them to the invocation following a double dash.</p>
 <pre class="codehilite shell"><code><span class="gp">$ </span>sourcekitten doc -- -scheme App
@@ -228,11 +228,10 @@ $sourcekitten syntax --file Source/Result.swift | jq 'map(select(.type == "sourc
 <span class="n">syntax</span><span class="p">.</span><span class="nf">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">token</span><span class="o">|</span>
   <span class="nb">puts</span> <span class="s2">"</span><span class="si">#{</span><span class="n">token</span><span class="p">[</span><span class="s1">'type'</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">#{</span><span class="n">contents</span><span class="p">.</span><span class="nf">slice</span><span class="p">(</span><span class="n">token</span><span class="p">[</span><span class="s1">'offset'</span><span class="p">],</span> <span class="n">token</span><span class="p">[</span><span class="s1">'length'</span><span class="p">])</span><span class="si">}</span><span class="s2">"</span>
 <span class="k">end</span>
-
 </code></pre>
 <h2>Natural Predators</h2>
 
-<p>While SourceKitten is a great way to gain better insights into your Swift projects today and make these easier to work with, the Swift team and contributors are also working on providing such support as part of the tooling shipped with the language, under the umbrella of the <a href="https://lists.swift.org/pipermail/swift-dev/Week-of-Mon-20170206/004066.html">Swift Syntax Structured Editing Library</a> which lives at <a href="https://github.com/apple/swift/tree/master/lib/Syntax"><code>lib/Syntax</code> in the Swift repository</a>.</p>
+<p>While SourceKitten is a great way to gain better insights into your Swift projects today, the Swift team and contributors are also working on providing such support as part of the tooling shipped with the language, under the umbrella of the <a href="https://lists.swift.org/pipermail/swift-dev/Week-of-Mon-20170206/004066.html">Swift Syntax Structured Editing Library</a> which lives at <a href="https://github.com/apple/swift/tree/master/lib/Syntax"><code>lib/Syntax</code> in the Swift repository</a>.</p>
 
           </article>
         </div>
