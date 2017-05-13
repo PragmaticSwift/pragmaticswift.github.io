@@ -1,0 +1,851 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Pragmatic Swift</title>
+  <subtitle>Learn about the most advanced techniques and best practices of the Swift ecosystem.</subtitle>
+  <id>http://pragmaticswift.com/</id>
+  <link href="http://pragmaticswift.com/"/>
+  <link href="http://pragmaticswift.com/feed.xml" rel="self"/>
+  <updated>2017-03-27T22:39:00+02:00</updated>
+  <entry>
+    <title>SourceKitten</title>
+    <link rel="alternate" href="http://pragmaticswift.com/may-2017/sourcekitten.html"/>
+    <id>http://pragmaticswift.com/may-2017/sourcekitten.html</id>
+    <published>2017-03-27T22:39:00+02:00</published>
+    <updated>2017-05-07T20:47:51+02:00</updated>
+    <author>
+      <name>Seán Labastille</name>
+    </author>
+    <content type="html">&lt;h1&gt;SourceKitten&lt;/h1&gt;
+
+&lt;p&gt;&lt;a href="https://github.com/jpsim/SourceKitten"&gt;SourceKitten&lt;/a&gt; is a command line utility wrapping &lt;a href="https://github.com/apple/swift/tree/master/tools/SourceKit"&gt;SourceKit&lt;/a&gt;.
+SourceKit supports editor functionality to work effectively with Swift such as code completion, indexing or syntax colouring. Xcode&amp;rsquo;s editor relies on SourceKit for this functionality, for example.&lt;/p&gt;
+
+&lt;p&gt;SourceKitten enables you to use these abilities yourself by providing high-level commands to extract documentation comments, get structure or syntax information as well as look up code completion suggestions.&lt;/p&gt;
+
+&lt;p&gt;Let&amp;rsquo;s walk through these step by step and see how you can work with the results of these commands, using &lt;a href="https://github.com/Alamofire/Alamofire"&gt;Alamofire&lt;/a&gt; as a sample project.&lt;/p&gt;
+
+&lt;h2&gt;Commands&lt;/h2&gt;
+
+&lt;h3&gt;Code Completion&lt;/h3&gt;
+
+&lt;p&gt;In order to look up code completion suggestions you need to provide a source file path as well as an offset within this file for which completions should be looked up for.&lt;/p&gt;
+
+&lt;p&gt;For example the following invocation points at the start of a switch case statement over an enumeration. Here the completions are restricted to the relevant enumeration cases.&lt;/p&gt;
+&lt;pre class="codehilite swift"&gt;&lt;code&gt;                &lt;span class="n"&gt;boundaryText&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;"--&lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="n"&gt;boundary&lt;/span&gt;&lt;span class="se"&gt;)\(&lt;/span&gt;&lt;span class="kt"&gt;EncodingCharacters&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;crlf&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt;"&lt;/span&gt;
+            &lt;span class="k"&gt;case&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nv"&gt;encapsulated&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                &lt;span class="n"&gt;boundaryText&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;"&lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="kt"&gt;EncodingCharacters&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;crlf&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt;--&lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="n"&gt;boundary&lt;/span&gt;&lt;span class="se"&gt;)\(&lt;/span&gt;&lt;span class="kt"&gt;EncodingCharacters&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;crlf&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt;"&lt;/span&gt;
+            &lt;span class="k"&gt;case&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nv"&gt;final&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+                  &lt;span class="o"&gt;^&lt;/span&gt;
+                &lt;span class="n"&gt;boundaryText&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;"&lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="kt"&gt;EncodingCharacters&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;crlf&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt;--&lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="n"&gt;boundary&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt;--&lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="kt"&gt;EncodingCharacters&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;crlf&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt;"&lt;/span&gt;
+            &lt;span class="p"&gt;}&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;boundaryText&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;data&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;using&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="kt"&gt;Encoding&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;utf8&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;allowLossyConversion&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;!&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;pre class="codehilite shell"&gt;&lt;code&gt;&lt;span class="gp"&gt;$ &lt;/span&gt;sourcekitten &lt;span class="nb"&gt;complete&lt;/span&gt; --file Source/MultipartFormData.swift --offset 3068
+&lt;/code&gt;&lt;/pre&gt;&lt;pre class="codehilite json"&gt;&lt;code&gt;&lt;span class="p"&gt;[{&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"descriptionKey"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"encapsulated"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"kind"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"source.lang.swift.decl.enumelement"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"name"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"encapsulated"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"sourcetext"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"encapsulated"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"numBytesToErase"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"typeName"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"MultipartFormData.BoundaryGenerator.BoundaryType"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"associatedUSRs"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"s:FOVC17MultipartFormData17MultipartFormData17BoundaryGenerator12BoundaryType12encapsulatedFMS2_S2_"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"moduleName"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"MultipartFormData"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"context"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"source.codecompletion.context.exprspecific"&lt;/span&gt;&lt;span class="w"&gt;
+&lt;/span&gt;&lt;span class="p"&gt;},&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"descriptionKey"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"final"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"kind"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"source.lang.swift.decl.enumelement"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"name"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"final"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"sourcetext"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"final"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"numBytesToErase"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"typeName"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"MultipartFormData.BoundaryGenerator.BoundaryType"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"associatedUSRs"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"s:FOVC17MultipartFormData17MultipartFormData17BoundaryGenerator12BoundaryType5finalFMS2_S2_"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"moduleName"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"MultipartFormData"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"context"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"source.codecompletion.context.exprspecific"&lt;/span&gt;&lt;span class="w"&gt;
+&lt;/span&gt;&lt;span class="p"&gt;},&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"descriptionKey"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"initial"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"kind"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"source.lang.swift.decl.enumelement"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"name"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"initial"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"sourcetext"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"initial"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"numBytesToErase"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"typeName"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"MultipartFormData.BoundaryGenerator.BoundaryType"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"associatedUSRs"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"s:FOVC17MultipartFormData17MultipartFormData17BoundaryGenerator12BoundaryType7initialFMS2_S2_"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"moduleName"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"MultipartFormData"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"context"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"source.codecompletion.context.exprspecific"&lt;/span&gt;&lt;span class="w"&gt;
+&lt;/span&gt;&lt;span class="p"&gt;}]&lt;/span&gt;&lt;span class="w"&gt;
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Elsewhere you may receive methods and operators applicable to strings:&lt;/p&gt;
+&lt;pre class="codehilite swift"&gt;&lt;code&gt;        &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;headerText&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;""&lt;/span&gt;
+
+        &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;key&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;value&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; &lt;span class="n"&gt;bodyPart&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;headers&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+            &lt;span class="n"&gt;headerText&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="s"&gt;"&lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="n"&gt;key&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt;: &lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="n"&gt;value&lt;/span&gt;&lt;span class="se"&gt;)\(&lt;/span&gt;&lt;span class="kt"&gt;EncodingCharacters&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;crlf&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt;"&lt;/span&gt;
+                      &lt;span class="o"&gt;^&lt;/span&gt;
+        &lt;span class="p"&gt;}&lt;/span&gt;
+        &lt;span class="n"&gt;headerText&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="kt"&gt;EncodingCharacters&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;crlf&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;headerText&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;data&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;using&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="kt"&gt;Encoding&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;utf8&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;allowLossyConversion&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;!&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;pre class="codehilite shell"&gt;&lt;code&gt;&lt;span class="gp"&gt;$ &lt;/span&gt;sourcekitten &lt;span class="nb"&gt;complete&lt;/span&gt; --file Source/MultipartFormData.swift --offset 18149
+&lt;/code&gt;&lt;/pre&gt;&lt;pre class="codehilite json"&gt;&lt;code&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s2"&gt;"..."&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"descriptionKey"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"+="&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"kind"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"source.lang.swift.decl.function.operator.infix"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"name"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"+="&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"sourcetext"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"+= &amp;lt;#T##String#&amp;gt;"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"numBytesToErase"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"typeName"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"Void"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"moduleName"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"Swift"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"context"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"source.codecompletion.context.othermodule"&lt;/span&gt;&lt;span class="w"&gt;
+&lt;/span&gt;&lt;span class="p"&gt;},&lt;/span&gt;&lt;span class="w"&gt;
+&lt;/span&gt;&lt;span class="s2"&gt;"..."&lt;/span&gt;&lt;span class="w"&gt;
+&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="w"&gt;
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;For more details on what kind of contexts code completion operates in you can review &lt;a href="https://github.com/apple/swift/blob/master/lib/IDE/CodeCompletion.cpp"&gt;the implementation&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h3&gt;Syntax&lt;/h3&gt;
+
+&lt;p&gt;This command simply returns an array of tokens contained in the given file, indicating their type and range (offset and length).&lt;/p&gt;
+&lt;pre class="codehilite shell"&gt;&lt;code&gt;&lt;span class="gp"&gt;$ &lt;/span&gt;sourcekitten syntax --file Source/Result.swift
+&lt;/code&gt;&lt;/pre&gt;&lt;pre class="codehilite json"&gt;&lt;code&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"..."&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;
+    &lt;/span&gt;&lt;span class="s2"&gt;"type"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"source.lang.swift.syntaxtype.identifier"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+    &lt;/span&gt;&lt;span class="s2"&gt;"offset"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;3514&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+    &lt;/span&gt;&lt;span class="s2"&gt;"length"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="p"&gt;},&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"..."&lt;/span&gt;&lt;span class="w"&gt;
+&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="w"&gt;
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;For a full list of types this might return, see the &lt;a href="https://github.com/apple/swift/blob/master/tools/SourceKit/lib/SwiftLang/SwiftLangSupport.cpp#L402-L419"&gt;SourceKit source code&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h3&gt;Structure &amp;amp; Documentation&lt;/h3&gt;
+
+&lt;p&gt;Describing both the structure and documentation for source files is closely related.
+The following invocation will return the structure of the given source file.&lt;/p&gt;
+&lt;pre class="codehilite shell"&gt;&lt;code&gt;&lt;span class="gp"&gt;$ &lt;/span&gt;sourcekitten structure --file Source/Result.swift
+&lt;/code&gt;&lt;/pre&gt;&lt;pre class="codehilite json"&gt;&lt;code&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.offset"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;2869&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.nameoffset"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;2873&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.accessibility"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"source.lang.swift.accessibility.public"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.typename"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"String"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.length"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;23&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.name"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"description"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.bodyoffset"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;2894&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.kind"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"source.lang.swift.decl.var.instance"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.namelength"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;11&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.bodylength"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;141&lt;/span&gt;&lt;span class="w"&gt;
+&lt;/span&gt;&lt;span class="p"&gt;},&lt;/span&gt;&lt;span class="w"&gt;
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Meanwhile, in order to extract documentation SourceKitten will invoke &lt;code&gt;xcodebuild&lt;/code&gt; under the hood, so you should run it in a folder containing an Xcode project.
+If you&amp;rsquo;re just experimenting it can be helpful to create a small sample project rather than waiting for a full build of your production app.&lt;/p&gt;
+
+&lt;p&gt;The simplest invocation of the documentation command will yield documentation for each source file in the project.
+The output below is a snippet focused on the same source code as the structure extracted above.
+Notice how the basic attributes are shared, but plenty of additional keys have been added such as various views of the documentation comments.&lt;/p&gt;
+
+&lt;p&gt;Another key benefit of compiling as part of generating documentation is receiving accurate type information or identifiers for entities like &lt;em&gt;Unified Symbol Resolution&lt;/em&gt; (USR) (See the &lt;a href="https://raw.githubusercontent.com/apple/swift/7e68e02b4eaa1cf44037a383129cbef60ea55d67/docs/Lexicon.rst"&gt;Swift lexicon&lt;/a&gt;).&lt;/p&gt;
+&lt;pre class="codehilite shell"&gt;&lt;code&gt;&lt;span class="gp"&gt;$ &lt;/span&gt;sourcekitten doc
+&lt;/code&gt;&lt;/pre&gt;&lt;pre class="codehilite json"&gt;&lt;code&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.accessibility"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"source.lang.swift.accessibility.public"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.length"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;23&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.overrides"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="w"&gt;
+    &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;
+      &lt;/span&gt;&lt;span class="s2"&gt;"key.usr"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"s:vPs23CustomStringConvertible11descriptionSS"&lt;/span&gt;&lt;span class="w"&gt;
+    &lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="p"&gt;],&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.doc.type"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"Other"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.parsed_scope.start"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;79&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.kind"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"source.lang.swift.decl.var.instance"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.doc.full_as_xml"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"&amp;lt;Other file=&lt;/span&gt;&lt;span class="se"&gt;\"&lt;/span&gt;&lt;span class="s2"&gt;./Source/Result.swift&lt;/span&gt;&lt;span class="se"&gt;\"&lt;/span&gt;&lt;span class="s2"&gt; line=&lt;/span&gt;&lt;span class="se"&gt;\"&lt;/span&gt;&lt;span class="s2"&gt;79&lt;/span&gt;&lt;span class="se"&gt;\"&lt;/span&gt;&lt;span class="s2"&gt; column=&lt;/span&gt;&lt;span class="se"&gt;\"&lt;/span&gt;&lt;span class="s2"&gt;16&lt;/span&gt;&lt;span class="se"&gt;\"&lt;/span&gt;&lt;span class="s2"&gt;&amp;gt;&amp;lt;Name&amp;gt;description&amp;lt;/Name&amp;gt;&amp;lt;USR&amp;gt;s:vO9Alamofire6Result11descriptionSS&amp;lt;/USR&amp;gt;&amp;lt;Declaration&amp;gt;public var description: String { get }&amp;lt;/Declaration&amp;gt;&amp;lt;Abstract&amp;gt;&amp;lt;Para&amp;gt;The textual representation used when written to an output stream, which includes whether the result was a success or failure.&amp;lt;/Para&amp;gt;&amp;lt;/Abstract&amp;gt;&amp;lt;/Other&amp;gt;"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.nameoffset"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;2873&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.typename"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"String"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.doc.column"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;16&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.doc.comment"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"The textual representation used when written to an output stream, which includes whether the result was a&lt;/span&gt;&lt;span class="se"&gt;\n&lt;/span&gt;&lt;span class="s2"&gt;success or failure."&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.bodyoffset"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;2894&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.filepath"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"./Source/Result.swift"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.doc.file"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"./Source/Result.swift"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.annotated_decl"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"&amp;lt;Declaration&amp;gt;public var description: &amp;lt;Type usr=&lt;/span&gt;&lt;span class="se"&gt;\"&lt;/span&gt;&lt;span class="s2"&gt;s:SS&lt;/span&gt;&lt;span class="se"&gt;\"&lt;/span&gt;&lt;span class="s2"&gt;&amp;gt;String&amp;lt;/Type&amp;gt; { get }&amp;lt;/Declaration&amp;gt;"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.fully_annotated_decl"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"&amp;lt;decl.var.instance&amp;gt;&amp;lt;syntaxtype.keyword&amp;gt;public&amp;lt;/syntaxtype.keyword&amp;gt; &amp;lt;syntaxtype.keyword&amp;gt;var&amp;lt;/syntaxtype.keyword&amp;gt; &amp;lt;decl.name&amp;gt;description&amp;lt;/decl.name&amp;gt;: &amp;lt;decl.var.type&amp;gt;&amp;lt;ref.struct usr=&lt;/span&gt;&lt;span class="se"&gt;\"&lt;/span&gt;&lt;span class="s2"&gt;s:SS&lt;/span&gt;&lt;span class="se"&gt;\"&lt;/span&gt;&lt;span class="s2"&gt;&amp;gt;String&amp;lt;/ref.struct&amp;gt;&amp;lt;/decl.var.type&amp;gt; { &amp;lt;syntaxtype.keyword&amp;gt;get&amp;lt;/syntaxtype.keyword&amp;gt; }&amp;lt;/decl.var.instance&amp;gt;"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.doc.declaration"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"public var description: String { get }"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.typeusr"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"_TtSS"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.offset"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;2869&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.doc.line"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;79&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.doc.name"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"description"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.name"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"description"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.usr"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"s:vO9Alamofire6Result11descriptionSS"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.parsed_declaration"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="s2"&gt;"public var description: String"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.namelength"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;11&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.parsed_scope.end"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;86&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt;
+  &lt;/span&gt;&lt;span class="s2"&gt;"key.bodylength"&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;141&lt;/span&gt;&lt;span class="w"&gt;
+&lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;If you normally need to pass additional arguments to &lt;code&gt;xcodebuild&lt;/code&gt; you can also use these with SourceKitten by adding them to the invocation following a double dash.&lt;/p&gt;
+&lt;pre class="codehilite shell"&gt;&lt;code&gt;&lt;span class="gp"&gt;$ &lt;/span&gt;sourcekitten doc -- -scheme App
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;Feral SourceKittens: Examples of usage in the wild&lt;/h2&gt;
+
+&lt;h3&gt;In other projects&lt;/h3&gt;
+
+&lt;p&gt;A prominent user of SourceKitten is Realm&amp;rsquo;s documentation generator &lt;a href="https://github.com/realm/jazzy"&gt;Jazzy&lt;/a&gt; which provides a great way to generate documentation for your codebase.&lt;/p&gt;
+
+&lt;h3&gt;In your own projects&lt;/h3&gt;
+
+&lt;p&gt;A quick way to start using SourceKitten yourself is by combining an invocation with &lt;a href="https://stedolan.github.io/jq/"&gt;&lt;code&gt;jq&lt;/code&gt;&lt;/a&gt; which offers &lt;code&gt;sed&lt;/code&gt;-like command line processing for JSON.&lt;/p&gt;
+
+&lt;p&gt;For example you can compare the relative amount of comments in a source file:&lt;/p&gt;
+&lt;pre class="codehilite plaintext"&gt;&lt;code&gt;$ sourcekitten syntax --file Source/Result.swift | jq 'map(select(.type != "source.lang.swift.syntaxtype.doccomment")) | length'
+239
+
+$sourcekitten syntax --file Source/Result.swift | jq 'map(select(.type == "source.lang.swift.syntaxtype.doccomment")) | length'
+78
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Once you have prototyped an interesting query you could of course use this as part of a more complex workflow, such as the following Ruby snippet below.&lt;/p&gt;
+&lt;pre class="codehilite ruby"&gt;&lt;code&gt;&lt;span class="c1"&gt;#!/usr/bin/env ruby&lt;/span&gt;
+
+&lt;span class="nb"&gt;require&lt;/span&gt; &lt;span class="s1"&gt;'json'&lt;/span&gt;
+
+&lt;span class="n"&gt;contents&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="no"&gt;File&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;read&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s1"&gt;'Source/Result.swift'&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="n"&gt;syntax&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="no"&gt;JSON&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;parse&lt;/span&gt;&lt;span class="sb"&gt;`sourcekitten syntax --file Source/Result.swift`&lt;/span&gt;
+
+&lt;span class="n"&gt;syntax&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;each&lt;/span&gt; &lt;span class="k"&gt;do&lt;/span&gt; &lt;span class="o"&gt;|&lt;/span&gt;&lt;span class="n"&gt;token&lt;/span&gt;&lt;span class="o"&gt;|&lt;/span&gt;
+  &lt;span class="nb"&gt;puts&lt;/span&gt; &lt;span class="s2"&gt;"&lt;/span&gt;&lt;span class="si"&gt;#{&lt;/span&gt;&lt;span class="n"&gt;token&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s1"&gt;'type'&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="si"&gt;}&lt;/span&gt;&lt;span class="s2"&gt; &lt;/span&gt;&lt;span class="si"&gt;#{&lt;/span&gt;&lt;span class="n"&gt;contents&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;slice&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;token&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s1"&gt;'offset'&lt;/span&gt;&lt;span class="p"&gt;],&lt;/span&gt; &lt;span class="n"&gt;token&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s1"&gt;'length'&lt;/span&gt;&lt;span class="p"&gt;])&lt;/span&gt;&lt;span class="si"&gt;}&lt;/span&gt;&lt;span class="s2"&gt;"&lt;/span&gt;
+&lt;span class="k"&gt;end&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h2&gt;Natural Predators&lt;/h2&gt;
+
+&lt;p&gt;While SourceKitten is a great way to gain better insights into your Swift projects today, the Swift team and contributors are also working on providing such support as part of the tooling shipped with the language, under the umbrella of the &lt;a href="https://lists.swift.org/pipermail/swift-dev/Week-of-Mon-20170206/004066.html"&gt;Swift Syntax Structured Editing Library&lt;/a&gt; which lives at &lt;a href="https://github.com/apple/swift/tree/master/lib/Syntax"&gt;&lt;code&gt;lib/Syntax&lt;/code&gt; in the Swift repository&lt;/a&gt;.&lt;/p&gt;
+</content>
+  </entry>
+  <entry>
+    <title>App Security in Swift</title>
+    <link rel="alternate" href="http://pragmaticswift.com/may-2017/app-security-in-swift.html"/>
+    <id>http://pragmaticswift.com/may-2017/app-security-in-swift.html</id>
+    <published>2017-03-27T22:39:00+02:00</published>
+    <updated>2017-05-05T22:41:19+02:00</updated>
+    <author>
+      <name>Elland</name>
+    </author>
+    <content type="html">&lt;h1&gt;App Security&lt;/h1&gt;
+
+&lt;h2&gt;TL;DR&lt;/h2&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Security is not a set of methods, it&amp;rsquo;s a system. It&amp;rsquo;s better to think about threats and trust as early as you can.&lt;/li&gt;
+&lt;li&gt;Avoid plaintext at all cost. Encrypt your communication. Encrypt your local data as required.&lt;/li&gt;
+&lt;li&gt;If you don&amp;rsquo;t store the password, it can&amp;rsquo;t be leaked. ;)&lt;/li&gt;
+&lt;li&gt;But if you need to store passwords, do it right!&lt;/li&gt;
+&lt;li&gt;It&amp;rsquo;s not paranoia if it&amp;rsquo;s true.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;hr&gt;
+
+&lt;p&gt;&lt;img src="https://imgs.xkcd.com/comics/security.png" alt="Actual reality: nobody cares about his secrets. (Also, I would be hard-pressed to find that wrench for $5.)" /&gt;&lt;/p&gt;
+
+&lt;p&gt;Keeping your user data safe and private is not the simplest of tasks. There is no golden solution; there&amp;rsquo;s no sure proof way of preventing user data from being stolen. If someone has the means and really wants to, the system will be compromised.&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;Two people are walking in the woods, they spot a bear. Security is not outrunning the bear. It&amp;rsquo;s outrunning the other person.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;With that bleak image in mind, let&amp;rsquo;s see what we can do, to make it either as hard as possible, or as hard as feasible, for data to be breached.&lt;/p&gt;
+
+&lt;p&gt;Sure, security is hard, and there&amp;rsquo;s no bulletproof solution. But there&amp;rsquo;s a lot of small things we can still do, that significantly improve our chances of keeping the data safe.&lt;/p&gt;
+
+&lt;h2&gt;Take a step back&lt;/h2&gt;
+
+&lt;p&gt;The first thing we should think about is if we need to store that data at all. We’re often storing data we don&amp;rsquo;t need, out of habit or because of external pressures. Is it crucial that we store the user&amp;rsquo;s address? Their phone numbers? Their full names? What kind of genitalia they have? Sometimes that answer is yes, but most of the time, it&amp;rsquo;s no. Remember: the more data you have, the more appetising your dataset becomes, and the more you have to work to secure it.&lt;/p&gt;
+
+&lt;p&gt;Once we figured out what data is really needed and what data can be discarded, the next step is figuring out risk and threat models. What are the most vulnerable points? What is more likely to happen? What can&amp;rsquo;t be prevented?&lt;/p&gt;
+
+&lt;p&gt;There&amp;rsquo;s no point in making a connection super secure if the private key is kept locally in plaintext, in a file called &lt;code&gt;myprivatekey&lt;/code&gt;.&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;Security is always a trade-off, between convenience and safety, between the effort you can put in and the risk level you face.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;h3&gt;Start Early&lt;/h3&gt;
+
+&lt;p&gt;There&amp;rsquo;s a very simple reason why iOS and the iPhone are so much more secure than Android. One of them was conceived with privacy and security in mind; the other wasn&amp;rsquo;t. &lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;It&amp;rsquo;s much easier to build something with security in mind from the start than to build something and then try to tack some security onto it.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Sometimes, making something that is already built secure might mean having to deconstruct the whole thing and put it back together again. Sometimes not even that can help.&lt;/p&gt;
+
+&lt;h3&gt;Never roll your own crypto&lt;/h3&gt;
+
+&lt;p&gt;Cryptography is not easy. It&amp;rsquo;s not simple to conceive it, it&amp;rsquo;s not easy to implement it, and it&amp;rsquo;s not easy to test it. There are a plethora of examples of really good cryptographic tools being broken all the time. Because computers become more powerful over time, because of bugs that weren&amp;rsquo;t caught before. Tools will fail you, all you can do is try to make them have the least possible impact on your data.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src="/may-2017/app-security-in-swift/schneier.png" alt="Schneier" /&gt;&lt;/p&gt;
+
+&lt;p&gt;For instance, if you&amp;rsquo;re using &lt;a href="https://en.wikipedia.org/wiki/Ephemeral_key"&gt;ephemeral keys&lt;/a&gt; for your communications, even if a tool is cracked or a key is leaked, the damage will be minimal, compared to using the same key for everything. Think of using ephemeral keys as not re-using your passwords.&lt;/p&gt;
+
+&lt;h2&gt;Storing keys and tokens, embracing the Keychain&lt;/h2&gt;
+
+&lt;p&gt;Plaintext is your enemy. Don&amp;rsquo;t store your keys as a variable in code. Don&amp;rsquo;t store it inside a local file. If something is sensitive, use the Keychain. Although it has a quite unfriendly API, there are &lt;a href="https://github.com/marketplacer/keychain-swift"&gt;good wrappers&lt;/a&gt; out there.&lt;/p&gt;
+&lt;pre class="codehilite swift"&gt;&lt;code&gt;&lt;span class="c1"&gt;// Don't do this:&lt;/span&gt;
+&lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;mySecretPassword&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;"Super secret password, tell nobody!"&lt;/span&gt;
+
+&lt;span class="c1"&gt;// Try this instead:&lt;/span&gt;
+&lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;mySecretPassword&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;keychainWrapper&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;string&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;for&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;passKey&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;It&amp;rsquo;s a small step that already improves things by quite a lot.&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;Do you want to know more about key management? What goals and features should a key management system have, how to generate &amp;amp; store keys, should we obfuscate or encrypt keys? Take a look at &lt;a href="https://twitter.com/vixentael"&gt;@vixentael&lt;/a&gt;&amp;lsquo;s &lt;a href="https://speakerdeck.com/vixentael/keys-from-the-castle-ancient-art-of-managing-keys-and-trust"&gt;last talk here&lt;/a&gt;.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Consider &lt;strong&gt;pinning your SSL certs&lt;/strong&gt; and its public keys. Many iOS libraries will provide you with ways of doing SSL certificate pinning, but you probably want to pin the certificate&amp;rsquo;s public key instead, since pinning the SSL certificate itself means that if they are revoked or expired, your app might not work until you update the binary with new certificates. As with most things security, you’ll have to weight the pros and cons of each solution. Sometimes it makes sense to give away a bit of extra security in the name of user convenience; sometimes it doesn’t. &lt;/p&gt;
+
+&lt;p&gt;Just remember: if it’s too user-hostile, they won’t use it. The worst thing you can do is making your users fight your system, instead of embracing it.&lt;/p&gt;
+
+&lt;p&gt;You’ll find more information on pinning certificates and public keys &lt;a href="https://www.owasp.org/index.php/Certificate_and_Public_Key_Pinning#iOS"&gt;in this great OWASP cheat sheet&lt;/a&gt;.&lt;/p&gt;
+
+&lt;h2&gt;Plaintext is the enemy&lt;/h2&gt;
+
+&lt;p&gt;&lt;img src="http://petslady.com/sites/default/files/inline-images/cattire.jpg" alt="Cattire" /&gt;&lt;/p&gt;
+
+&lt;p&gt;Be it passwords, API keys, your local database, your cache, your users&amp;rsquo; personal details, one thing remains true: plaintext is your enemy. It doesn&amp;rsquo;t matter how much care and effort you put into making your application secure, your server secure, your transport secure, if someone can just plug a phone, open iTunes and retrieve your certificates and keys, or even worse: lift them off from Github. Encryption is key.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src="/may-2017/app-security-in-swift/apikey.png" alt="Not a pretty picture." /&gt;&lt;/p&gt;
+
+&lt;h2&gt;How to easily and safely encrypt/decrypt user data&lt;/h2&gt;
+
+&lt;p&gt;There&amp;rsquo;re many tools for symmetric and asymmetric encryption. Most of them are built on a top of existing community-proven libraries. We can name only a few, but there are more.&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://github.com/krzyzanowskim/CryptoSwift"&gt;CryptoSwift&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://github.com/RNCryptor/RNCryptor"&gt;RNCrypto&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://github.com/cossacklabs/themis"&gt;Themis&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;For example, &lt;a href="https://github.com/cossacklabs/themis"&gt;Themis&lt;/a&gt; provides a good context-based model for encrypting and decrypting data. A context-based model uses not only a password but also a context, as a means of encrypting and decrypting data. We’ll be using the &lt;a href="https://github.com/cossacklabs/themis/wiki/Secure-Cell-cryptosystem"&gt;Secure Cell&lt;/a&gt; model for this.&lt;/p&gt;
+&lt;pre class="codehilite swift"&gt;&lt;code&gt;&lt;span class="c1"&gt;// Firstly, create a TSCellSeal using a password. Remember to keep this password safe! Embrace the Keychain.&lt;/span&gt;
+&lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;masterKeyData&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;password&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;data&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;using&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;utf8&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="k"&gt;guard&lt;/span&gt; &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;cellSeal&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;TSCellSeal&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;TSCellSeal&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;key&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;masterKeyData&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;else&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="nf"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"Error occurred while initializing object cellSeal"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="kc"&gt;nil&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="c1"&gt;// Then we can encrypt some data.&lt;/span&gt;
+&lt;span class="c1"&gt;// Now the context can be anything, we recommend you pick something that creates a secure hard-to-guess association to the data being de/encrypted. For example: it's database row number.&lt;/span&gt;
+&lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;encryptedMessage&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Data&lt;/span&gt;
+&lt;span class="k"&gt;do&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="n"&gt;encryptedMessage&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;try&lt;/span&gt; &lt;span class="n"&gt;cell&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;wrap&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;message&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;data&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;using&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;utf8&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;
+                    &lt;span class="nv"&gt;context&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;context&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;data&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;using&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;utf8&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt; &lt;span class="k"&gt;catch&lt;/span&gt; &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;error&lt;/span&gt; &lt;span class="k"&gt;as&lt;/span&gt; &lt;span class="kt"&gt;NSError&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="nf"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"Error occurred while encrypting &lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="n"&gt;error&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt;"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kd"&gt;#function&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="kc"&gt;nil&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="c1"&gt;// Now to decrypt it, we need the same password as well as the same context.&lt;/span&gt;
+&lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;decryptedMessage&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Data&lt;/span&gt;
+&lt;span class="k"&gt;do&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+  &lt;span class="n"&gt;decryptedMessage&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;try&lt;/span&gt; &lt;span class="n"&gt;cell&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;unwrapData&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;encryptedMessage&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;context&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;context&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;data&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;using&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;utf8&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt; &lt;span class="k"&gt;catch&lt;/span&gt; &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;error&lt;/span&gt; &lt;span class="k"&gt;as&lt;/span&gt; &lt;span class="kt"&gt;NSError&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+  &lt;span class="nf"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"Error occurred while decrypting &lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="n"&gt;error&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt;"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kd"&gt;#function&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+  &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="kc"&gt;nil&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Again, a complex model made simpler with Themis, but still quite complicated. Using ephemeral keys, using key derivation, all behind the scenes, abstracting the complexity of security.&lt;/p&gt;
+
+&lt;h2&gt;SSL is not enough. Certificate Pinning is not enough.&lt;/h2&gt;
+
+&lt;p&gt;&lt;img src="http://www.funnycatsite.com/pictures/Security_Cat.jpg" alt="Security cat" /&gt;
+&lt;caption&gt;I&amp;rsquo;m here to keep your data safe.&lt;/caption&gt;&lt;/p&gt;
+
+&lt;p&gt;You&amp;rsquo;ve been reading a lot about the topic, and you feel confident that your app is well configured. It will only accept HTTPS connections. It pinned all the certificates for the critical stuff. &lt;/p&gt;
+
+&lt;p&gt;Unfortunately, SSL is a fragile system. (Remember, that &lt;a href="https://security.googleblog.com/2016/10/distrusting-wosign-and-startcom.html"&gt;story about WoSign&lt;/a&gt;, that issued certificates even if they&amp;rsquo;re not the domain owners?) Do not rely on SSL encryption if your app is dealing with &lt;em&gt;sensitive data&lt;/em&gt;. &lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://www.cossacklabs.com/avoid-ssl-for-your-next-app.html"&gt;Why you should avoid SSL in your next app?&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Add a layer of encryption for your network connection. Encrypt data before sending, decrypt after receiving. In the end-to-end world, a server wouldn&amp;rsquo;t even know what this data is.&lt;/p&gt;
+
+&lt;h2&gt;Conclusion&lt;/h2&gt;
+
+&lt;p&gt;There are a simple set of tools and concepts that can go a long way with minimal effort. While not all applications deal with bank transactions and therefore don&amp;rsquo;t need the utmost security levels, most applications deal with a lot of user data, and that data should be kept just as safe.&lt;/p&gt;
+
+&lt;p&gt;Don&amp;rsquo;t just give the illusion of security. Don&amp;rsquo;t give the illusion of insecurity either. &lt;/p&gt;
+
+&lt;p&gt;&lt;img src="https://media.giphy.com/media/3o85xH5pfwcCXZyfg4/giphy.gif" alt="Giphy" /&gt;&lt;/p&gt;
+
+&lt;h1&gt;Read more&lt;/h1&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://code.tutsplus.com/articles/securing-communications-on-ios--cms-28529"&gt;Securing Communications on iOS&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://realm.io/news/tryswift-anastasiia-voitova-building-user-centric-security-model-ios-applications-swift"&gt;Building a User-Centric Security Model in iOS Applications&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://medium.com/@vixentael/upgrading-approaches-to-the-secure-mobile-architectures-7a8fcb10d28a"&gt;Upgrading Approaches to the Secure Mobile Architectures&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://developer.apple.com/videos/play/wwdc2016/709/"&gt;Engineering Privacy for Your Users&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</content>
+  </entry>
+  <entry>
+    <title>Server Side Swift</title>
+    <link rel="alternate" href="http://pragmaticswift.com/may-2017/server-side-swift.html"/>
+    <id>http://pragmaticswift.com/may-2017/server-side-swift.html</id>
+    <published>2017-03-27T22:38:00+02:00</published>
+    <updated>2017-05-05T22:12:14+02:00</updated>
+    <author>
+      <name>Roland Leth</name>
+    </author>
+    <content type="html">&lt;h1&gt;Vapor and its callback and throwing stacks&lt;/h1&gt;
+
+&lt;p&gt;This article is about Vapor, a framework for writing a server with Swift. I&amp;rsquo;m an iOS developer at heart, and I love Swift, so it was only natural to eventually convert my own &lt;a href="https://rolandleth.com"&gt;blog&lt;/a&gt; to it. So I did, and I would like to present a couple of features that I found interesting - middleware, and their callback chain, and error handling. We&amp;rsquo;ll also make use of protocols and extensions to create hierarchies, expand functionality, and better structure the project.&lt;/p&gt;
+
+&lt;p&gt;Let&amp;rsquo;s start with a (somewhat) simple server:&lt;/p&gt;
+&lt;pre class="codehilite swift"&gt;&lt;code&gt;&lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;drop&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;Droplet&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="c1"&gt;// 1&lt;/span&gt;
+
+&lt;span class="k"&gt;try&lt;/span&gt;&lt;span class="p"&gt;?&lt;/span&gt; &lt;span class="nf"&gt;addProvider&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;VaporPostgreSQL&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="kt"&gt;Provider&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="k"&gt;self&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c1"&gt;// 2&lt;/span&gt;
+&lt;span class="n"&gt;drop&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;preparations&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="kt"&gt;Model&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="k"&gt;self&lt;/span&gt; &lt;span class="c1"&gt;// 3&lt;/span&gt;
+
+&lt;span class="n"&gt;drop&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;middleware&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;insert&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;RedirectMiddleWare&lt;/span&gt;&lt;span class="p"&gt;(),&lt;/span&gt; &lt;span class="nv"&gt;at&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c1"&gt;// 4&lt;/span&gt;
+&lt;span class="n"&gt;drop&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;middleware&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;append&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;GzipMiddleWare&lt;/span&gt;&lt;span class="p"&gt;())&lt;/span&gt; &lt;span class="c1"&gt;// 5&lt;/span&gt;
+&lt;span class="n"&gt;drop&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;middleware&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;append&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;HeadersMiddleware&lt;/span&gt;&lt;span class="p"&gt;())&lt;/span&gt;
+
+&lt;span class="n"&gt;drop&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;get&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"/test"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;handler&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="n"&gt;request&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt;
+    &lt;span class="nf"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"4"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="k"&gt;try&lt;/span&gt; &lt;span class="kt"&gt;JSON&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;node&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;"This is a test page."&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="p"&gt;})&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;Configuring the Droplet.&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;We start by creating our droplet (1), we add a database provider (2) and a &lt;code&gt;Model&lt;/code&gt; entity (3) to be used with it, then add our middleware. The order of the middleware usually doesn&amp;rsquo;t matter and is done by &lt;code&gt;appending&lt;/code&gt; (5) them. Sometimes, though, we might have very specific needs and we want one of the middleware to run first. In this case, we can insert it to be first on the stack (4), thus being the first one to be called, before any other internal ones.&lt;/p&gt;
+
+&lt;p&gt;Now, onto the middleware: how they operate, and more on why the are added like that. Vapor offers a &lt;code&gt;Middleware&lt;/code&gt; protocol, which requires just one method:&lt;/p&gt;
+&lt;pre class="codehilite swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="nf"&gt;respond&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="nv"&gt;request&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Request&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;chainingTo&lt;/span&gt; &lt;span class="nv"&gt;next&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Responder&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;throws&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="kt"&gt;Response&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;The Middleware&amp;rsquo;s only method.&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;Through this method, a middleware takes the request, modifies it (or not) accordingly, then either passes it to the next responder (which can be another middleware or an endpoint handler), which returns a response, modifies it (or not) accordingly, either directly creates and returns a response. We&amp;rsquo;ll see each of these cases in the examples to follow.&lt;/p&gt;
+
+&lt;p&gt;First on the stack, the &lt;code&gt;RedirectMiddleware&lt;/code&gt;:&lt;/p&gt;
+&lt;pre class="codehilite swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;struct&lt;/span&gt; &lt;span class="kt"&gt;RedirectMiddleware&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Middleware&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+
+    &lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="nf"&gt;respond&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="nv"&gt;request&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Request&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;chainingTo&lt;/span&gt; &lt;span class="nv"&gt;next&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Responder&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;throws&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="kt"&gt;Response&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="nf"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"1"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;guard&lt;/span&gt; &lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;uri&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;scheme&lt;/span&gt; &lt;span class="o"&gt;!=&lt;/span&gt; &lt;span class="s"&gt;"https"&lt;/span&gt; &lt;span class="k"&gt;else&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="c1"&gt;// 1&lt;/span&gt;
+            &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;response&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;try&lt;/span&gt; &lt;span class="n"&gt;next&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;respond&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;to&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c1"&gt;// 2&lt;/span&gt;
+            &lt;span class="nf"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"7"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;response&lt;/span&gt; &lt;span class="c1"&gt;// 3&lt;/span&gt;
+        &lt;span class="p"&gt;}&lt;/span&gt;
+
+        &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;uri&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;uriWithSecureScheme&lt;/span&gt;
+
+        &lt;span class="nf"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"alternate"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="kt"&gt;Response&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;redirect&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;uri&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;description&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c1"&gt;// 4&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;RedirectMiddleware.&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;The only purpose of this middleware is to check if the current request is a secure one (1). If it&amp;rsquo;s not, we create and return (4) a new response with the request&amp;rsquo;s &lt;code&gt;URI&lt;/code&gt;, modified to have and &lt;code&gt;https&lt;/code&gt; scheme. If it is already secure, we pass it to the next responder (2), and we are done - we return whatever that returns us (3). Since we want &lt;em&gt;all&lt;/em&gt; requests to be secure, there&amp;rsquo;s no need to let the request pass through all other middleware, thus its position at index &lt;code&gt;0&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Our next middleware, the &lt;code&gt;HeadersMiddleware&lt;/code&gt;:&lt;/p&gt;
+&lt;pre class="codehilite swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;struct&lt;/span&gt; &lt;span class="kt"&gt;HeadersMiddleware&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Middleware&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+
+    &lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="nf"&gt;respond&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="nv"&gt;request&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Request&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;chainingTo&lt;/span&gt; &lt;span class="nv"&gt;next&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Responder&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;throws&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="kt"&gt;Response&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="nf"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"2"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;response&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;try&lt;/span&gt; &lt;span class="n"&gt;next&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;respond&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;to&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c1"&gt;// 1&lt;/span&gt;
+        &lt;span class="nf"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"6"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+        &lt;span class="n"&gt;response&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;headers&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;"Cache-Control"&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;"public, max-age=86400"&lt;/span&gt; &lt;span class="c1"&gt;// 2&lt;/span&gt;
+
+        &lt;span class="c1"&gt;// Disable the embedding of the site in an external one.&lt;/span&gt;
+        &lt;span class="n"&gt;response&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;headers&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;"Content-Security-Policy"&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;"frame-ancestors 'none'"&lt;/span&gt;
+        &lt;span class="n"&gt;response&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;headers&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;"X-Frame-Options"&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;"DENY"&lt;/span&gt;
+
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;response&lt;/span&gt; &lt;span class="c1"&gt;// 3&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;HeadersMiddleware.&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;This one passes the request directly to the next responder (1), and only after that returns a response, we set some headers on it (2), and return it (3).&lt;/p&gt;
+
+&lt;p&gt;Next on the stack, and next responder, the &lt;code&gt;GzipMiddleware&lt;/code&gt;:&lt;/p&gt;
+&lt;pre class="codehilite swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;struct&lt;/span&gt; &lt;span class="kt"&gt;GzipMiddleware&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Middleware&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+
+    &lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="nf"&gt;respond&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="nv"&gt;request&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Request&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;chainingTo&lt;/span&gt; &lt;span class="nv"&gt;next&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Responder&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;throws&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="kt"&gt;Response&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="nf"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"3"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;response&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;try&lt;/span&gt; &lt;span class="n"&gt;next&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;respond&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;to&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c1"&gt;// 1&lt;/span&gt;
+        &lt;span class="nf"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"5"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+        &lt;span class="n"&gt;response&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;body&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;gzippedBody&lt;/span&gt; &lt;span class="c1"&gt;// 2&lt;/span&gt;
+        &lt;span class="n"&gt;response&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;headers&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;"Content-Encoding"&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;"gzip"&lt;/span&gt; &lt;span class="c1"&gt;// 3&lt;/span&gt;
+        &lt;span class="n"&gt;response&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;headers&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="s"&gt;"Content-Length"&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;gzippedBody&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;length&lt;/span&gt;
+
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;response&lt;/span&gt; &lt;span class="c1"&gt;// 4&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;GZipMiddleware.&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;Here we also pass the response directly to the next responder (1), then add a couple of headers as well (3), but we also change the body (2) before returning (4) it.&lt;/p&gt;
+
+&lt;p&gt;How are middleware handled internally? Basically, just like we use them ourselves - &lt;code&gt;Droplet&lt;/code&gt; conforms to the &lt;code&gt;Responder&lt;/code&gt; protocol, which has just one method:&lt;/p&gt;
+&lt;pre class="codehilite swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="nf"&gt;respond&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="nv"&gt;request&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Request&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;throws&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="kt"&gt;Response&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;The Droplet&amp;rsquo;s respond method.&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;Compared to the &lt;code&gt;Middleware&lt;/code&gt; protocol, this one can not be called by chaining it to anything else; it chains all of the middleware in its implementation, though:&lt;/p&gt;
+&lt;pre class="codehilite swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;extension&lt;/span&gt; &lt;span class="kt"&gt;Droplet&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Responder&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+
+    &lt;span class="kd"&gt;public&lt;/span&gt; &lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="nf"&gt;respond&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="nv"&gt;request&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Request&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;throws&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="kt"&gt;Response&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+
+        &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="o"&gt;...&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+
+        &lt;span class="nf"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"0"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+      &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;mainResponder&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;middleware&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;chain&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;to&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;routerResponder&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c1"&gt;// 1&lt;/span&gt;
+        &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;response&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Response&lt;/span&gt;
+
+        &lt;span class="k"&gt;do&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+            &lt;span class="n"&gt;response&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;try&lt;/span&gt; &lt;span class="n"&gt;mainResponder&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;respond&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;to&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c1"&gt;// 2&lt;/span&gt;
+        &lt;span class="p"&gt;}&lt;/span&gt;
+        &lt;span class="k"&gt;catch&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="kt"&gt;Response&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;status&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;internalServerError&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;headers&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;[:],&lt;/span&gt; &lt;span class="nv"&gt;body&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;"Error message"&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;bytes&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c1"&gt;// 3&lt;/span&gt;
+        &lt;span class="p"&gt;}&lt;/span&gt;
+
+        &lt;span class="nf"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"10"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;response&lt;/span&gt; &lt;span class="c1"&gt;// 4&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;The Droplet&amp;rsquo;s respond method implementation.&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;Here we can see that a responder is created (1) by chaining all middlewares (not calling them, yet), and it&amp;rsquo;s used to create a response out of the request (2), that will be returned (4) if everything goes OK. If that fails, a new response is created and returned (3), which will contain an error message and a status code. How are the middleware chained (1), and called? With an extension of &lt;code&gt;Collection&lt;/code&gt; and a &lt;code&gt;Responder&lt;/code&gt; subclass, whose sole purpose is to hold and call a closure:&lt;/p&gt;
+&lt;pre class="codehilite swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;extension&lt;/span&gt; &lt;span class="kt"&gt;Request&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+
+    &lt;span class="kd"&gt;public&lt;/span&gt; &lt;span class="kd"&gt;struct&lt;/span&gt; &lt;span class="kt"&gt;Handler&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Responder&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="kd"&gt;public&lt;/span&gt; &lt;span class="kd"&gt;typealias&lt;/span&gt; &lt;span class="kt"&gt;Closure&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;Request&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;throws&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="kt"&gt;Response&lt;/span&gt;
+
+        &lt;span class="kd"&gt;private&lt;/span&gt; &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;closure&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Closure&lt;/span&gt;
+
+        &lt;span class="kd"&gt;public&lt;/span&gt; &lt;span class="nf"&gt;init&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;_&lt;/span&gt; &lt;span class="nv"&gt;closure&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kd"&gt;@escaping&lt;/span&gt; &lt;span class="kt"&gt;Closure&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+            &lt;span class="k"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;closure&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;closure&lt;/span&gt; &lt;span class="c1"&gt;// 1&lt;/span&gt;
+        &lt;span class="p"&gt;}&lt;/span&gt;
+
+        &lt;span class="kd"&gt;public&lt;/span&gt; &lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="nf"&gt;respond&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="nv"&gt;request&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Request&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;throws&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="kt"&gt;Response&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="k"&gt;try&lt;/span&gt; &lt;span class="nf"&gt;closure&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c1"&gt;// 2&lt;/span&gt;
+        &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="kd"&gt;extension&lt;/span&gt; &lt;span class="kt"&gt;Collection&lt;/span&gt; &lt;span class="k"&gt;where&lt;/span&gt; &lt;span class="kt"&gt;Iterator&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="kt"&gt;Element&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="kt"&gt;Middleware&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+
+    &lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="nf"&gt;chain&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="nv"&gt;responder&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Responder&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="kt"&gt;Responder&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="nf"&gt;reversed&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;reduce&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;responder&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="n"&gt;nextResponder&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;nextMiddleware&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; &lt;span class="c1"&gt;// 3&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="kt"&gt;Request&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="kt"&gt;Handler&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="n"&gt;request&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt;
+                &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="k"&gt;try&lt;/span&gt; &lt;span class="n"&gt;nextMiddleware&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;respond&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;to&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;chainingTo&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;nextResponder&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c1"&gt;// 4&lt;/span&gt;
+            &lt;span class="p"&gt;}&lt;/span&gt;
+        &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;Extending Request and Collection.&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;The &lt;code&gt;chain&lt;/code&gt; method reverses all middleware (3) and at each step, it creates and returns a new &lt;code&gt;Handler&lt;/code&gt;, that calls the &lt;code&gt;Middleware&lt;/code&gt;&amp;lsquo;s protocol method we talked about earlier, by passing the request and the current responder to it. This way, if we remember our (shortened, for an easier explanation) middleware stack, &lt;code&gt;[Redirect, Headers, Gzip]&lt;/code&gt; will go through the chain method like this:&lt;/p&gt;
+&lt;pre class="codehilite plaintext"&gt;&lt;code&gt;reverse -&amp;gt;
+[Gzip, Headers, Redirect] -&amp;gt;
+create and return a Handler, that in its closure calls Gzip's respond(to: request, chainingTo: mainResponder) -&amp;gt;
+create and return a Handler, that in its closure calls Headers' respond(to: request, chainingTo: gzipResponder) -&amp;gt;
+create and return a Handler, that in its closure calls Redirect's respond(to: request, chainingTo: headersResponder) -&amp;gt;
+return the Redirect Handler
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;Chaining the middleware&amp;rsquo;s closures.&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;Droplet&lt;/code&gt;&amp;rsquo;s &lt;code&gt;respond&lt;/code&gt; method is the place where the returned &lt;code&gt;Handler&lt;/code&gt;&amp;rsquo;s &lt;code&gt;closure&lt;/code&gt; is called (2), which will call the next, and so on. The last one that will be called is the &lt;code&gt;handler&lt;/code&gt; closure passed in our &lt;code&gt;get&lt;/code&gt; method, and is the first one that chains the responses/errors back:&lt;/p&gt;
+&lt;pre class="codehilite swift"&gt;&lt;code&gt;&lt;span class="n"&gt;drop&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;get&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"/test"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;handler&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="n"&gt;request&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt;
+    &lt;span class="nf"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"4"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="k"&gt;try&lt;/span&gt; &lt;span class="kt"&gt;JSON&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;node&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;"This is a test page."&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="p"&gt;})&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;get&amp;rsquo;s handler.&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;Finally, let&amp;rsquo;s put everything together, and follow the chain. A secure requets gets sent like this:&lt;/p&gt;
+&lt;pre class="codehilite plaintext"&gt;&lt;code&gt;create the main responder ("0") -&amp;gt;
+RequestMiddleware ("1") -&amp;gt;
+Other, internal middleware -&amp;gt;
+HeadersMiddleware ("2") -&amp;gt;
+GZipMiddleware ("3") -&amp;gt;
+MiscMiddleware1 -&amp;gt;
+MiscMiddleware2
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;Secure request chain.&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;Then, the response is sent like this:&lt;/p&gt;
+&lt;pre class="codehilite plaintext"&gt;&lt;code&gt;get's handler ("4") -&amp;gt;
+GZipMiddleware ("5") -&amp;gt;
+HeadersMiddleware ("6") -&amp;gt;
+Other, internal middleware -&amp;gt;
+RequestMiddleware ("7") -&amp;gt;
+response is sent to client ("10")
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;Response chain.&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;A non-secure request has a slightly longer path to follow:&lt;/p&gt;
+&lt;pre class="codehilite plaintext"&gt;&lt;code&gt;get("/test") -&amp;gt;
+RequestMiddleware ("1") -&amp;gt;
+RequestMiddleware ("alternate") -&amp;gt;
+start over -&amp;gt;
+RequestMiddleware ("1") -&amp;gt;
+[continue with the rest of the secure path]
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;Non-secure request chain.&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;As you can see, the main advantages of middleware are that we can modularize code, by breaking it down into smaller, specialized classes. Due to the fact that each serves a single, usually small, purpose, they can be reasoned with much easier, are more expressive, and easier to test/change/remove. None of them know about each other, they all act on the request/response independently, without caring what happens down/up the chain.&lt;/p&gt;
+
+&lt;p&gt;The throwing chain follows the exact same path, and, at its core, is very straightforward: if anything throws an error and it is not handled, it will be passed back the request/response chain until a handler is found, or, it will reach the internal catch block (3 in the &lt;code&gt;extension Droplet: Responder&lt;/code&gt; snippet), where a &lt;code&gt;Response&lt;/code&gt; is created with a generic error message.&lt;/p&gt;
+
+&lt;p&gt;Let us see how one could handle errors. First, the most straightforward, in-place handling:&lt;/p&gt;
+&lt;pre class="codehilite swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;extension&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Error&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="p"&gt;}&lt;/span&gt; &lt;span class="c1"&gt;// 1&lt;/span&gt;
+
+&lt;span class="n"&gt;drop&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;get&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"/handle"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;handler&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="n"&gt;request&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt;
+    &lt;span class="k"&gt;do&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;answer&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;try&lt;/span&gt; &lt;span class="nf"&gt;findAnswer&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;in&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="kt"&gt;JSON&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;answer&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c1"&gt;// 2&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="k"&gt;catch&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="kt"&gt;JSON&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"Answer couldn't be computed."&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c1"&gt;// 3&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="p"&gt;})&lt;/span&gt;
+
+&lt;span class="n"&gt;drop&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;get&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"/pass-along"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;handler&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="n"&gt;request&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt;
+    &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;answer&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;try&lt;/span&gt; &lt;span class="nf"&gt;findAnswer&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;in&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c1"&gt;// 4&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="kt"&gt;JSON&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;answer&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c1"&gt;// 5&lt;/span&gt;
+&lt;span class="p"&gt;})&lt;/span&gt;
+
+&lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="nf"&gt;findAnswer&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="nv"&gt;request&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Request&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;throws&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;guard&lt;/span&gt; &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;answer&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;extract&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"answer"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;as?&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt; &lt;span class="k"&gt;else&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="k"&gt;throw&lt;/span&gt; &lt;span class="s"&gt;"Answer parameter is not present."&lt;/span&gt; &lt;span class="c1"&gt;// 6&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+
+    &lt;span class="k"&gt;guard&lt;/span&gt; &lt;span class="n"&gt;computingFinishedFast&lt;/span&gt; &lt;span class="k"&gt;else&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="k"&gt;throw&lt;/span&gt; &lt;span class="s"&gt;"Computing took too long to finish."&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;answer&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;Throwing strings.&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;By conforming &lt;code&gt;String&lt;/code&gt; to &lt;code&gt;Error&lt;/code&gt; (1), we can throw strings (6), just as if we&amp;rsquo;d have created an enum with associated values, conforming to &lt;code&gt;Error&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;In the case of the &lt;code&gt;handle&lt;/code&gt; endpoint, if everything goes well in &lt;code&gt;findAnswer&lt;/code&gt;, we return a &lt;code&gt;JSON&lt;/code&gt; created out of our &lt;code&gt;answer&lt;/code&gt; (2); if something goes wrong, we catch the error, and return a &lt;code&gt;JSON&lt;/code&gt; created out of our error (3).&lt;/p&gt;
+
+&lt;p&gt;In the case of the &lt;code&gt;pass-along&lt;/code&gt; endpoint, if everything goes well, the same scenario applies (5); but if an error is thrown, since we aren&amp;rsquo;t handling it here, it will be passed on the callback chain (4), as previously mentioned.&lt;/p&gt;
+
+&lt;p&gt;We can already see that if we add other endpoints that make use of the &lt;code&gt;findAnswer&lt;/code&gt; method, we&amp;rsquo;ll have to treat the error again and again.&lt;/p&gt;
+
+&lt;p&gt;Another approach, recommended by Vapor&amp;rsquo;s documentation, and a great idea per se, is to create an error handling middleware, that handles all errors. Let&amp;rsquo;s start by creating an &lt;code&gt;AppError&lt;/code&gt; entity, and change our &lt;code&gt;findAnswer&lt;/code&gt; method:&lt;/p&gt;
+&lt;pre class="codehilite swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;enum&lt;/span&gt; &lt;span class="kt"&gt;AppError&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Error&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;case&lt;/span&gt; &lt;span class="nf"&gt;argumentNotPresent&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;name&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;case&lt;/span&gt; &lt;span class="n"&gt;computingTimedOut&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="n"&gt;drop&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;get&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"/handle"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;handler&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="n"&gt;request&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt;
+    &lt;span class="k"&gt;do&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;answer&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;try&lt;/span&gt; &lt;span class="nf"&gt;findAnswer&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;in&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="kt"&gt;JSON&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;answer&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c1"&gt;// 1&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="k"&gt;catch&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="kt"&gt;JSON&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"Answer couldn't be computed."&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c1"&gt;// 2&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="p"&gt;})&lt;/span&gt;
+
+&lt;span class="n"&gt;drop&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;get&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"/pass-along"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;handler&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="n"&gt;request&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt;
+    &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;answer&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;try&lt;/span&gt; &lt;span class="nf"&gt;findAnswer&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;in&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c1"&gt;// 3&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="kt"&gt;JSON&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;answer&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c1"&gt;// 4&lt;/span&gt;
+&lt;span class="p"&gt;})&lt;/span&gt;
+
+&lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="nf"&gt;findAnswer&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="nv"&gt;request&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Request&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;throws&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;guard&lt;/span&gt; &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;answer&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;extract&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"answer"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;as?&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt; &lt;span class="k"&gt;else&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="k"&gt;throw&lt;/span&gt; &lt;span class="kt"&gt;AppError&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;argumentNotPresent&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;name&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;"answer"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c1"&gt;// 5&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+
+    &lt;span class="k"&gt;guard&lt;/span&gt; &lt;span class="n"&gt;computingFinishedFast&lt;/span&gt; &lt;span class="k"&gt;else&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="k"&gt;throw&lt;/span&gt; &lt;span class="kt"&gt;AppError&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;computingTimedOut&lt;/span&gt; &lt;span class="c1"&gt;// 6&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;answer&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;Throwing custom errors.&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;We can still handle errors in-place (1, 2), but since we will be adding a middleware to treat errors, passing them along (3, 4) would be the go-to choice. Our &lt;code&gt;findAnswer&lt;/code&gt; method now throws an &lt;code&gt;AppError&lt;/code&gt; (5) with an associated value for the expected parameter and is also throwing an error for the timeout (6).&lt;/p&gt;
+
+&lt;p&gt;As we already know, we only need to implement one method, so let&amp;rsquo;s see how we can do that:&lt;/p&gt;
+&lt;pre class="codehilite swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;struct&lt;/span&gt; &lt;span class="kt"&gt;ErrorHandlingMiddleware&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Middleware&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+
+    &lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="nf"&gt;respond&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="nv"&gt;request&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Request&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;chainingTo&lt;/span&gt; &lt;span class="nv"&gt;next&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Responder&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;throws&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="kt"&gt;Response&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="k"&gt;do&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="k"&gt;try&lt;/span&gt; &lt;span class="n"&gt;next&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;respond&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;to&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c1"&gt;// 1&lt;/span&gt;
+        &lt;span class="p"&gt;}&lt;/span&gt;
+          &lt;span class="k"&gt;catch&lt;/span&gt; &lt;span class="kt"&gt;AppError&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;argumentNotPresent&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;name&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="c1"&gt;// 2&lt;/span&gt;
+            &lt;span class="k"&gt;throw&lt;/span&gt; &lt;span class="kt"&gt;Abort&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;custom&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="c1"&gt;// 3&lt;/span&gt;
+                &lt;span class="nv"&gt;status&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;badRequest&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                &lt;span class="nv"&gt;message&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;"Argument &lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="n"&gt;name&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt; was not found."&lt;/span&gt; &lt;span class="c1"&gt;// 4&lt;/span&gt;
+            &lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="p"&gt;}&lt;/span&gt;
+          &lt;span class="k"&gt;catch&lt;/span&gt; &lt;span class="kt"&gt;AppError&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;computingTimedOut&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="c1"&gt;// 5&lt;/span&gt;
+              &lt;span class="k"&gt;throw&lt;/span&gt; &lt;span class="kt"&gt;Abort&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;custom&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
+                &lt;span class="nv"&gt;status&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;requestTimeout&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="c1"&gt;// 6&lt;/span&gt;
+                &lt;span class="nv"&gt;message&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;"Computing an answer has timed out."&lt;/span&gt;
+            &lt;span class="p"&gt;)&lt;/span&gt;
+          &lt;span class="p"&gt;}&lt;/span&gt;
+          &lt;span class="k"&gt;catch&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="c1"&gt;// 7&lt;/span&gt;
+                &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="kt"&gt;Response&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt; &lt;span class="c1"&gt;// 8&lt;/span&gt;
+                    &lt;span class="nv"&gt;status&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;serverError&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+                    &lt;span class="nv"&gt;message&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;"Something unexpected happened."&lt;/span&gt;
+                &lt;span class="p"&gt;)&lt;/span&gt;
+          &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;ErrorHandlingMiddleware.&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;The only thing we need to do is pass the request to the next responder inside a &lt;code&gt;do-catch&lt;/code&gt; block. If everything goes well (1), the request will have reached our &lt;code&gt;get&lt;/code&gt; handlers, the response has reached back to us (1), and we can return it further along the chain (1).&lt;/p&gt;
+
+&lt;p&gt;If something went wrong in our &lt;code&gt;findAnswer&lt;/code&gt; method, we can do the catching ourselves and create and throw specific &lt;code&gt;Abort&lt;/code&gt; errors (3) - an enum offered by Vapor, or create and return a &lt;code&gt;Response&lt;/code&gt; (8).&lt;/p&gt;
+
+&lt;p&gt;Catching an error with an associated value (2) gives us the flexibility of extracting the parameter that was not present (4), opening up the possibility of throwing the same error, but for a different parameter:&lt;/p&gt;
+&lt;pre class="codehilite swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="nf"&gt;findMeaningOfLife&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="nv"&gt;request&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Request&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;throws&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="kt"&gt;Int&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;guard&lt;/span&gt; &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;answer&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;request&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;extract&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"meaningOfLife"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;as?&lt;/span&gt; &lt;span class="kt"&gt;Int&lt;/span&gt; &lt;span class="k"&gt;else&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="k"&gt;throw&lt;/span&gt; &lt;span class="kt"&gt;AppError&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;argumentNotPresent&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;name&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;"meaningOfLife"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="mi"&gt;42&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;Throwing errors with associated values.&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;We can now treat the timeout error separately (5), with an appropriate status (6), and we can also have a fallback &lt;code&gt;catch&lt;/code&gt; (7) for everything else, where we simply return a &lt;code&gt;serverError&lt;/code&gt;, with a generic message.&lt;/p&gt;
+
+&lt;p&gt;Finally, we just need to add our new middleware to the droplet, and we&amp;rsquo;re good to go:&lt;/p&gt;
+&lt;pre class="codehilite swift"&gt;&lt;code&gt;&lt;span class="c1"&gt;// [...]&lt;/span&gt;
+&lt;span class="n"&gt;drop&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;middleware&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;append&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;ErrorHandlingMiddleware&lt;/span&gt;&lt;span class="p"&gt;())&lt;/span&gt;
+&lt;span class="c1"&gt;// [...]&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;Adding the error handling middleware.&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;I&amp;rsquo;d like to mention one more neat feature of middleware: per-server configuration. Let&amp;rsquo;s say we want our &lt;code&gt;ErrorHandlingMiddleware&lt;/code&gt; to only run on production; locally we want our app to just crash, for some reason. Instead of appending the middleware like we saw so far, droplets offer &lt;a href="https://vapor.github.io/documentation/guide/config.html"&gt;configuration files&lt;/a&gt;, and we can make use of those.&lt;/p&gt;
+
+&lt;p&gt;First, let&amp;rsquo;s add the middleware as a configurable, instead of appending it as a middleware:&lt;/p&gt;
+&lt;pre class="codehilite swift"&gt;&lt;code&gt;&lt;span class="c1"&gt;// [...]&lt;/span&gt;
+&lt;span class="c1"&gt;// drop.middleware.append(ErrorHandlingMiddleware()) -&amp;gt; replaced with:&lt;/span&gt;
+&lt;span class="n"&gt;drop&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;addConfigurable&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;middleware&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;ErrorHandlingMiddleware&lt;/span&gt;&lt;span class="p"&gt;(),&lt;/span&gt; &lt;span class="nv"&gt;name&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;"error-handling"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="c1"&gt;// [...]&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;Adding a configurable middleware.&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;Then let&amp;rsquo;s add the appropriate keys in our &lt;code&gt;Config/production/droplet.json&lt;/code&gt; and &lt;code&gt;Config/staging/droplet.json&lt;/code&gt; files:&lt;/p&gt;
+&lt;pre class="codehilite json"&gt;&lt;code&gt;&lt;span class="err"&gt;//&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="err"&gt;production/droplet.json&lt;/span&gt;&lt;span class="w"&gt;
+&lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;
+    &lt;/span&gt;&lt;span class="err"&gt;...&lt;/span&gt;&lt;span class="w"&gt;
+    &lt;/span&gt;&lt;span class="s2"&gt;"middleware"&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;
+        &lt;/span&gt;&lt;span class="s2"&gt;"server"&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="w"&gt;
+            &lt;/span&gt;&lt;span class="err"&gt;...&lt;/span&gt;&lt;span class="w"&gt;
+            &lt;/span&gt;&lt;span class="s2"&gt;"error-handling"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="err"&gt;//&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="w"&gt;
+            &lt;/span&gt;&lt;span class="err"&gt;...&lt;/span&gt;&lt;span class="w"&gt;
+        &lt;/span&gt;&lt;span class="p"&gt;],&lt;/span&gt;&lt;span class="w"&gt;
+        &lt;/span&gt;&lt;span class="s2"&gt;"client"&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="w"&gt;
+            &lt;/span&gt;&lt;span class="err"&gt;...&lt;/span&gt;&lt;span class="w"&gt;
+        &lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="w"&gt;
+    &lt;/span&gt;&lt;span class="p"&gt;},&lt;/span&gt;&lt;span class="w"&gt;
+    &lt;/span&gt;&lt;span class="err"&gt;...&lt;/span&gt;&lt;span class="w"&gt;
+&lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;
+
+&lt;/span&gt;&lt;span class="err"&gt;//&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="err"&gt;staging/droplet.json&lt;/span&gt;&lt;span class="w"&gt;
+&lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;
+    &lt;/span&gt;&lt;span class="err"&gt;...&lt;/span&gt;&lt;span class="w"&gt;
+    &lt;/span&gt;&lt;span class="s2"&gt;"middleware"&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;{&lt;/span&gt;&lt;span class="w"&gt;
+        &lt;/span&gt;&lt;span class="s2"&gt;"server"&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="w"&gt;
+            &lt;/span&gt;&lt;span class="err"&gt;...&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="err"&gt;//&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="w"&gt;
+        &lt;/span&gt;&lt;span class="p"&gt;],&lt;/span&gt;&lt;span class="w"&gt;
+        &lt;/span&gt;&lt;span class="s2"&gt;"client"&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="w"&gt; &lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="w"&gt;
+            &lt;/span&gt;&lt;span class="err"&gt;...&lt;/span&gt;&lt;span class="w"&gt;
+        &lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;&lt;span class="w"&gt;
+    &lt;/span&gt;&lt;span class="p"&gt;},&lt;/span&gt;&lt;span class="w"&gt;
+    &lt;/span&gt;&lt;span class="err"&gt;...&lt;/span&gt;&lt;span class="w"&gt;
+&lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;&lt;span class="w"&gt;
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;em&gt;droplet.json&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;Now, the &lt;code&gt;ErrorHandlingMiddleware&lt;/code&gt; will be added to the production server&amp;rsquo;s middleware (1) on app launch, but not on staging (2). A middleware can be added to both server and client, and to any &lt;code&gt;Config/server-type/droplet.json&lt;/code&gt; file; also the ordering of the array will be respected.
+&lt;br&gt;
+As we&amp;rsquo;re reaching the end of the article, we can see that Swift is a pretty viable solution for setting up a server. Protocols let us define a &lt;code&gt;Middleware&lt;/code&gt; entity to be easily used to modify our requests/responses, and extensions gave us the versatility of adding their handlers to a chained stack. We also made use of extensions to open up the possibility of &lt;code&gt;throwing&lt;/code&gt; a string, for basic error handling, but also for simple things, like separating the &lt;code&gt;Request.Handler&lt;/code&gt; hierarchy out of the main struct, for a better project structure.&lt;/p&gt;
+
+&lt;p&gt;By using Swift both on the server and on the client, one could also share models, functionality and helpers/utilities, avoid duplication and by looking at the server and client as a whole, everything would be easier to reason with.&lt;/p&gt;
+
+&lt;p&gt;As for Vapor itself, as the framework of choice? It&amp;rsquo;s not the best, nor the worst, according to &lt;a href="https://medium.com/@rymcol/benchmarks-for-the-top-server-side-swift-frameworks-vs-node-js-24460cfe0beb"&gt;this&lt;/a&gt; article (9 months old, things might have changed), but it offers a really similar mindset to Express.js and Sinatra (those were my previous two choices for my own &lt;a href="https://rolandleth.com"&gt;blog&lt;/a&gt;), and it also fit my needs pretty well (a blog with not too many requests, that didn&amp;rsquo;t require any APIs, either).&lt;/p&gt;
+</content>
+  </entry>
+  <entry>
+    <title>Preface</title>
+    <link rel="alternate" href="http://pragmaticswift.com/may-2017/preface.html"/>
+    <id>http://pragmaticswift.com/may-2017/preface.html</id>
+    <published>2017-03-11T12:08:00+01:00</published>
+    <updated>2017-05-05T22:14:22+02:00</updated>
+    <author>
+      <name>Junior B.</name>
+    </author>
+    <content type="html">&lt;h1&gt;Preface&lt;/h1&gt;
+
+&lt;p&gt;Welcome to Pragmatic Swift, this is the first and pilot issue. The goal of this publication is to gather articles about trending topics related to the Swift programming language. Pragmatic Swift is heavily inspired by &lt;a href="https://www.objc.io/issues/"&gt;Objc.io&amp;rsquo;s issues&lt;/a&gt;, trying to open as much as possible the possibility to help and contribute to the project.&lt;/p&gt;
+
+&lt;h2&gt;Why&lt;/h2&gt;
+
+&lt;p&gt;Swift is a young programming language and for this reason, it&amp;rsquo;s difficult to find a good and reliable source of publications and articles. The current state of the art is composed by single blogs maintained by great developers devoted to sharing as much as possible and great newsletters to help everybody else in staying informed about where to find these articles.&lt;/p&gt;
+
+&lt;p&gt;The fragmentation of sources makes stay informed about the current status of Swift very hard, the pace of the language itself is high and every year there are new features and small details changed. Details that can make a big difference if learned, but that sometimes are hidden or not so easy to master in a first usage. &lt;/p&gt;
+
+&lt;p&gt;Swift is a programming language is in rapid evolution, the nature of the language is gaining traction also in other usages outside the Apple ecosystem.&lt;/p&gt;
+
+&lt;h2&gt;The concept&lt;/h2&gt;
+
+&lt;p&gt;The original concept has been discussed during the first edition of &lt;a href="http://swiftalps.com"&gt;Swift Alps&lt;/a&gt; and with the support of many people, the whole process got shaped in a very natural way. The main 3 goals were to be: technical, structured and open to the community. Run a project like this fully open might be a big risk and a journey full of pitfalls, but the outcome can definitely pay off. So you might ask, how this works? Well, let me explain it in details&amp;hellip;&lt;/p&gt;
+
+&lt;h3&gt;The process&lt;/h3&gt;
+
+&lt;p&gt;The whole process is about having an author and an editor for each article. The author writes the article helped by an editor that checks for mistakes and validates the whole idea behind the article, giving feedbacks, opinions and eventually fixing typos or grammar when necessary.&lt;/p&gt;
+
+&lt;p&gt;Every issue aims to have between 4 and 5 articles, for the first part it will be a bimonthly publication, to better fix the problems behind the process and find contributors. If everything works correctly, the plan is to switch to a monthly issue by Fall 2017.&lt;/p&gt;
+
+&lt;h3&gt;Continuation&lt;/h3&gt;
+
+&lt;p&gt;Once an issue is ready, the editors can decide to fade away and authors are kindly asked to become editors on the following release helping the new ones in writing the article for the following issue. This creates a continuation of the project and gives the opportunity to share what the editor, previously author, learned during the process. If an editor wants to help on the following release, he&amp;rsquo;s more than welcome, the only restriction is that an author should avoid writing an article in two consecutive issues.&lt;/p&gt;
+
+&lt;p&gt;&lt;img src="/may-2017/preface/flow.png" alt="Preface" /&gt;&lt;/p&gt;
+
+&lt;h3&gt;Effort&lt;/h3&gt;
+
+&lt;p&gt;As previously said, an author is asked to be editor in the following release, for this reason, the required effort should not be underestimated. The number of hours required varies from 4 up to 10 hours for a single article, depending on the level of experience, knowledge of the topic and also interest. The more an author is interested, the more an article is detailed, but this can also make the whole process longer than expected. If you want to help, please take this into consideration.&lt;/p&gt;
+
+&lt;h3&gt;Topics&lt;/h3&gt;
+
+&lt;p&gt;For the first issues, the general topics are already decided and won&amp;rsquo;t have much room for being discussed, but starting from Fall 2017, the goal is to open the decision about the topic and also the selection of authors, trying to give to everyone the chance to participate, share and learn.&lt;/p&gt;
+
+&lt;h3&gt;Type of Articles&lt;/h3&gt;
+
+&lt;p&gt;Pragmatic Swift aims to give detailed posts and insights on specific topics, trying to be technical and informative. There&amp;rsquo;s no reason to create tutorials or how-to articles, this kind of resources have a couple of great sources like &lt;a href="https://www.hackingwithswift.com"&gt;Hacking With Swift&lt;/a&gt; and &lt;a href="https://www.raywenderlich.com"&gt;Ray Wenderlich&lt;/a&gt;, their value is already known and widely recognized.&lt;/p&gt;
+
+&lt;h2&gt;Conclusion&lt;/h2&gt;
+
+&lt;p&gt;Thanks for reading the preface, there&amp;rsquo;s no need to annoy you more, I conclude with an amazing quote:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;Everybody [&amp;hellip;] should learn to program a computer because it teaches you how to think. - Steve Jobs&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;hoping that you will enjoy this project.&lt;/p&gt;
+</content>
+  </entry>
+</feed>
